@@ -530,7 +530,7 @@ function SwipeCard({ submission, onAccept, onReject, disabled }: SwipeCardProps)
 
   const artwork = typeof submission.artwork === 'object' ? submission.artwork as Artwork : null
 
-  const handleDragEnd = (event: any, info: PanInfo) => {
+  const handleDragEnd = (_event: any, info: PanInfo) => {
     if (disabled) return
 
     const threshold = 100

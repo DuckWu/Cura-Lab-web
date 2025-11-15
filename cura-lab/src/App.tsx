@@ -37,7 +37,7 @@ export type View =
 export default function App() {
   const [view, setView] = useState<View>('landing')
   const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [loadingUser, setLoadingUser] = useState(true)
+  const [_loadingUser, setLoadingUser] = useState(true)
   const [selectedGalleryId, setSelectedGalleryId] = useState<number | null>(null)
   const [selectedExhibitionId, setSelectedExhibitionId] = useState<number | null>(null)
   const [editingExhibitionId, setEditingExhibitionId] = useState<number | null>(null)
@@ -69,9 +69,9 @@ export default function App() {
   const handleLogin = () => {
     setView('login') // 改成跳转到前端登录页面，而不是后端
   }
-  const handleSignup = () => {
-    setView('signup') // 🆕 跳转到注册页
-  }
+  // const handleSignup = () => {
+  //   setView('signup') // 🆕 跳转到注册页
+  // }
   const handleLoginSuccess = () => {
   // 重新获取用户
     fetch(`${PAYLOAD_URL}/api/users/me`, {

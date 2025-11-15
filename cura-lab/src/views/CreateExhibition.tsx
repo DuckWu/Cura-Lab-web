@@ -4,13 +4,13 @@ import {
   ArrowLeft,
   Upload,
   Loader2,
-  Image as ImageIcon,
+
   X,
   Check,
   AlertCircle,
-  Calendar,
+
   DollarSign,
-  Users,
+
   Award
 } from 'lucide-react'
 import type { User, Gallery } from '../../../payload-project/src/payload-types'

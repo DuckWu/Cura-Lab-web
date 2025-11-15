@@ -2,10 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { 
   Palette, 
   Gavel, 
-  Building, 
-  Calendar, 
+
   ArrowRight, 
-  Sparkles,
+
   CheckCircle,
   Zap,
   Wand2,
@@ -32,14 +31,14 @@ function isMedia(img: string | number | Media | null | undefined): img is Media 
   return typeof img === 'object' && img !== null && 'url' in img
 }
 
-const formatDate = (dateString: string | null | undefined) => {
-  if (!dateString) return 'N/A'
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
+// const                       formatDate = (dateString: string | null | undefined) => {
+//   if (!dateString) return 'N/A'
+//   return new Date(dateString).toLocaleDateString('en-US', {
+//     month: 'short',
+//     day: 'numeric',
+//     year: 'numeric',
+//   })
+// }
 
 type LandingProps = {
   onBrowse: () => void

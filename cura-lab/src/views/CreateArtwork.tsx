@@ -4,7 +4,6 @@ import {
   ArrowLeft, 
   Upload, 
   Loader2, 
-  Image as ImageIcon,
   X,
   Check,
   AlertCircle

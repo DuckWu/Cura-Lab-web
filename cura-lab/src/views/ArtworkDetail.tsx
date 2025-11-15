@@ -12,7 +12,6 @@ import {
   Ruler,
   Calendar,
   Package,
-  FileText,
   Save,
   X
 } from 'lucide-react'
@@ -41,7 +40,6 @@ type ArtworkDetailProps = {
 
 export default function ArtworkDetail({
   artworkId,
-  currentUser,
   onBack
 }: ArtworkDetailProps) {
   const [artwork, setArtwork] = useState<Artwork | null>(null)

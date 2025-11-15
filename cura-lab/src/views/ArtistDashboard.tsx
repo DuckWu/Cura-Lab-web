@@ -5,7 +5,6 @@ import {
   FileText,
   CheckCircle,
   Clock,
-  DollarSign,
   Palette,
   Loader2,
   AlertCircle,
