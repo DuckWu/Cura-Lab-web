@@ -1,0 +1,27 @@
+# 这是唯一需要的内容。它只负责启动 Postgres 数据库。
+# 你的 'npm run dev' 会在本地运行并连接到它。
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - '5432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: payload-project
+      POSTGRES_USER: postgres
+      # 这一行会自动从你的 .env 文件里读取 POSTGRES_PASSWORD=Snowman1!
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - payload
+
+# (!! 关键 !!)
+# 在文件底部定义 network 和 volume
+# 这会修复你截图中的 "undefined network" 错误
+
+networks:
+  payload:
+
+volumes:
+  db-data:

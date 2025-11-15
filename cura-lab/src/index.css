@@ -1,0 +1,42 @@
+/* -------------------------------------------------------
+   Tailwind CSS Entry
+   This file is the global stylesheet for your React app.
+   ------------------------------------------------------- */
+
+/* 1️⃣ 导入 Tailwind 全部功能（v4 新写法） */
+@import "tailwindcss";
+
+/* 2️⃣ 自定义全局样式（可选） */
+html, body {
+  @apply bg-neutral-50 text-neutral-900 antialiased;
+}
+
+/* 3️⃣ 自定义字体（可选） */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight text-neutral-900;
+  }
+  p {
+    @apply text-neutral-700 leading-relaxed;
+  }
+}
+
+/* 4️⃣ 自定义组件样式（可选） */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-neutral-900 text-white
+           px-4 py-2 font-medium hover:bg-neutral-800 active:scale-[0.98]
+           transition-transform duration-150;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-neutral-200 p-6;
+  }
+}
+
+/* 5️⃣ 实用工具（可选） */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
