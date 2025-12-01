@@ -30,14 +30,21 @@ export default buildConfig({
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:3000',
-    process.env.FRONTEND_URL || '', // Your Vercel Frontend URL
+    process.env.FRONTEND_URL || '', 
+    // 👇 直接把报错的这个域名加进去，不要带斜杠
+    'https://cura-lab-web-hvtq.vercel.app', 
+    'https://cura-lab-web.vercel.app', // 把正式域名也加上
   ].filter(Boolean),
-  // CSRF: Allow cookies to be set from these domains
+
+  // 2. 修改 CSRF：也要加进去
   csrf: [
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:3000',
     process.env.FRONTEND_URL || '',
+    // 👇 同样加在这里
+    'https://cura-lab-web-hvtq.vercel.app',
+    'https://cura-lab-web.vercel.app',
   ].filter(Boolean),
   collections: [Users, Media, Galleries, Exhibitions, Artworks, Submissions],
   editor: lexicalEditor(),
