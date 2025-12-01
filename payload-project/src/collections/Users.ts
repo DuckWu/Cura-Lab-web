@@ -13,7 +13,16 @@ export const APP_ROLES = {
 export const Users: CollectionConfig = {
   slug: 'users',
   // (!!) Payload 的内置 auth 功能
-  auth: true, 
+  auth: {
+    // 允许跨域 Cookie 的关键配置
+    cookies: {
+      sameSite: 'None', // 允许跨站 (Cross-Site)
+      secure: true,     // 必须是 HTTPS (Vercel 默认就是 HTTPS，所以没问题)
+      domain: undefined // 不要设置 domain，让它自动匹配
+    },
+    // 其他 auth 配置...
+    tokenExpiration: 7200, // 2小时过期
+  },
   admin: {
     useAsTitle: 'email',
   },

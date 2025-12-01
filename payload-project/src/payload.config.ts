@@ -46,6 +46,7 @@ export default buildConfig({
     'https://cura-lab-web-hvtq.vercel.app',
     'https://cura-lab-web.vercel.app',
   ].filter(Boolean),
+  cookiePrefix: 'payload',
   collections: [Users, Media, Galleries, Exhibitions, Artworks, Submissions],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
