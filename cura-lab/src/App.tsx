@@ -270,6 +270,7 @@ export default function App() {
             setSelectedExhibitionId(id)
             setView('exhibitionDetail')
           }}
+          onEnterJuryMode={() => setView('jurorReview')}
         />
       )}
 

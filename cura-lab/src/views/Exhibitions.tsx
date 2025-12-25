@@ -55,6 +55,7 @@ export default function Exhibitions({ onViewDetail }: ExhibitionsProps) {
         setLoading(true)
         setError(null)
         
+        // 获取所有已发布的展览
         const apiUrl = `${PAYLOAD_URL}/api/exhibitions?depth=1&where[status][equals]=published&sort=-createdAt`
         const response = await fetch(apiUrl)
         
@@ -237,7 +238,16 @@ interface ExhibitionCardProps {
 function ExhibitionCard({ exhibition, onViewDetail }: ExhibitionCardProps) {
   const daysRemaining = getDaysRemaining(exhibition.submission_deadline)
   const isClosingSoon = daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0
-  const isClosed = daysRemaining !== null && daysRemaining <= 0
+  
+  // 🟢 修复逻辑：
+  // 1. 获取后台真实状态
+  const status = exhibition.exhibitionStatus || 'draft'
+  
+  // 2. 只有当后台状态是 'open' 且 日期没过期时，才算真正开启
+  const isOpen = status === 'open' && (daysRemaining === null || daysRemaining > 0)
+  
+  // 3. 只要状态不是 open，或者日期过期，就算关闭 (优先显示特定的非open状态)
+  const isClosed = status !== 'open' || (daysRemaining !== null && daysRemaining <= 0)
 
   return (
     <button
@@ -263,24 +273,35 @@ function ExhibitionCard({ exhibition, onViewDetail }: ExhibitionCardProps) {
 
         {/* Status Badges */}
         <div className="absolute top-4 left-4 flex flex-col gap-2">
-          {/* Exhibition Status */}
-          {exhibition.exhibitionStatus === 'open' && !isClosed && (
+          
+          {/* 显示开启状态：必须 status=open 且未过期 */}
+          {isOpen && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-green-400 to-emerald-500 rounded-full shadow-lg">
               <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
               Open Call
             </span>
           )}
           
-          {isClosingSoon && (
+          {/* 即将截止提示：仅在开启时显示 */}
+          {isOpen && isClosingSoon && (
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-orange-400 to-red-500 rounded-full shadow-lg">
               <Clock className="w-3 h-3" />
               Closing Soon
             </span>
           )}
 
+          {/* 显示非开启状态 */}
           {isClosed && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-neutral-600 rounded-full shadow-lg">
-              Closed
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white rounded-full shadow-lg ${
+              status === 'jury_review' ? 'bg-purple-600' : 
+              status === 'finalized' ? 'bg-blue-600' :
+              status === 'on_display' ? 'bg-indigo-600' :
+              'bg-neutral-600' // default for 'closed' or date expired
+            }`}>
+              {status === 'jury_review' ? 'Jury Review' : 
+               status === 'finalized' ? 'Finalized' : 
+               status === 'on_display' ? 'On Display' : 
+               'Closed'}
             </span>
           )}
         </div>
@@ -320,7 +341,7 @@ function ExhibitionCard({ exhibition, onViewDetail }: ExhibitionCardProps) {
             <Calendar className="w-4 h-4" />
             <span className="text-xs">{formatDate(exhibition.submission_deadline)}</span>
           </div>
-          {daysRemaining !== null && daysRemaining > 0 && (
+          {isOpen && daysRemaining !== null && (
             <span className={`text-xs font-medium ${isClosingSoon ? 'text-orange-600' : 'text-neutral-500'}`}>
               {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left
             </span>

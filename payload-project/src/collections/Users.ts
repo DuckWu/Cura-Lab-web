@@ -41,12 +41,18 @@ export const Users: CollectionConfig = {
           or: [
             {
               id: {
-                equals: req.user.id,           // 只要等于当前用户
+                equals: req.user.id,           // 允许看自己
               },
             },
             {
               appRole: {
-                equals: APP_ROLES.juror,       // 或者是 juror
+                equals: APP_ROLES.juror,       // 允许看所有评委
+              },
+            },
+            // 🚀 核心修改：允许看所有画廊用户（这样才能选自己或其他画廊）
+            {
+              appRole: {
+                equals: APP_ROLES.gallery,
               },
             },
           ],

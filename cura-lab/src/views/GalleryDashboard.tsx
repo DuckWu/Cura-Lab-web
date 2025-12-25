@@ -15,8 +15,9 @@ import {
   CheckCircle,
   UserPlus,
   Send,
-  XCircle,
-  Check
+  Check,
+  ListFilter,
+  Briefcase
 } from 'lucide-react'
 import type { User, Gallery, Exhibition, Submission, Media } from '../../../payload-project/src/payload-types'
 
@@ -40,24 +41,31 @@ type GalleryDashboardProps = {
   onCreateExhibition: () => void
   onEditExhibition?: (id: number) => void
   onViewExhibition?: (id: number) => void
+  onEnterJuryMode?: () => void
 }
 
 export default function GalleryDashboard({
   currentUser,
   onCreateExhibition,
   onEditExhibition,
-  onViewExhibition
+  onViewExhibition,
+  onEnterJuryMode
 }: GalleryDashboardProps) {
   const [myGallery, setMyGallery] = useState<Gallery | null>(null)
   const [exhibitions, setExhibitions] = useState<Exhibition[]>([])
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
   const [activeTab, setActiveTab] = useState<'exhibitions' | 'submissions'>('exhibitions')
+  const [filterExhibitionId, setFilterExhibitionId] = useState<string | 'all'>('all')
+
   const [selectedExhibition, setSelectedExhibition] = useState<Exhibition | null>(null)
   const [showJurorModal, setShowJurorModal] = useState(false)
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [showBatchAssignModal, setShowBatchAssignModal] = useState(false)
+  
   const [stats, setStats] = useState({
     totalExhibitions: 0,
     activeExhibitions: 0,
@@ -69,6 +77,11 @@ export default function GalleryDashboard({
     setSubmissions(prev =>
       prev.map(s => (s.id === updated.id ? updated : s))
     )
+  }
+
+  const handleManageSubmissions = (exhibitionId: number) => {
+    setFilterExhibitionId(String(exhibitionId))
+    setActiveTab('submissions')
   }
 
   useEffect(() => {
@@ -200,117 +213,145 @@ export default function GalleryDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      {/* Header */}
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                {isMedia(myGallery.logo) && (
-                  <img
-                    src={`${PAYLOAD_URL}${myGallery.logo.url!}`}
-                    alt={myGallery.name}
-                    className="w-12 h-12 rounded-xl object-cover border border-neutral-200"
-                  />
-                )}
-                <div>
-                  <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 tracking-tight">
-                    {myGallery.name}
-                  </h1>
-                  <p className="text-gray-600">{myGallery.location}</p>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={onCreateExhibition}
-              className="inline-flex items-center gap-2 px-6 py-3 text-base font-semibold text-white bg-neutral-900 hover:bg-neutral-800 rounded-full transition-all shadow-lg hover:shadow-xl"
+    <div className="min-h-screen bg-neutral-50 flex">
+      {/* 🚀 左侧固定侧边栏 */}
+      <div className="hidden lg:flex w-64 bg-white border-r border-neutral-200 flex-col sticky top-0 h-screen z-20">
+        <div className="p-8 font-black text-2xl tracking-tighter border-b">ADMIN PANEL</div>
+        <nav className="flex-1 p-4 space-y-2 mt-4">
+          <button 
+            onClick={() => setActiveTab('exhibitions')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'exhibitions' ? 'bg-neutral-900 text-white shadow-lg' : 'text-gray-500 hover:bg-neutral-100'}`}
+          >
+            <Calendar className="w-5 h-5" /> Exhibitions
+          </button>
+          <button 
+            onClick={() => { setActiveTab('submissions'); setFilterExhibitionId('all'); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'submissions' ? 'bg-neutral-900 text-white shadow-lg' : 'text-gray-500 hover:bg-neutral-100'}`}
+          >
+            <FileText className="w-5 h-5" /> All Submissions
+          </button>
+
+          <div className="pt-6 mt-6 border-t border-neutral-100">
+            <p className="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tools</p>
+            <button 
+              onClick={onEnterJuryMode}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-purple-600 hover:bg-purple-50 transition-all"
             >
-              <Plus className="w-5 h-5" />
-              New Exhibition
+              <Briefcase className="w-5 h-5" />
+              Enter Jury Mode
             </button>
           </div>
-        </div>
+        </nav>
       </div>
 
-      {/* Stats */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            icon={Calendar}
-            label="Total Exhibitions"
-            value={stats.totalExhibitions}
-            color="primary"
-          />
-          <StatCard
-            icon={TrendingUp}
-            label="Active Exhibitions"
-            value={stats.activeExhibitions}
-            color="success"
-          />
-          <StatCard
-            icon={FileText}
-            label="Total Submissions"
-            value={stats.totalSubmissions}
-            color="accent"
-          />
-          <StatCard
-            icon={DollarSign}
-            label="Total Revenue"
-            value={`$${stats.totalRevenue.toFixed(2)}`}
-            color="primary"
-          />
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 pb-16">
-        {/* Tabs */}
-        <div className="border-b border-neutral-200 mb-8">
-          <div className="flex gap-8 overflow-x-auto">
-            {(['exhibitions', 'submissions'] as const).map((tab) => (
+      {/* 右侧主内容区 */}
+      <div className="flex-1 overflow-x-hidden">
+        {/* Header */}
+        <div className="bg-white border-b border-neutral-200">
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  {isMedia(myGallery.logo) && (
+                    <img
+                      src={`${PAYLOAD_URL}${myGallery.logo.url!}`}
+                      alt={myGallery.name}
+                      className="w-12 h-12 rounded-xl object-cover border border-neutral-200"
+                    />
+                  )}
+                  <div>
+                    <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 tracking-tight">
+                      {myGallery.name}
+                    </h1>
+                    <p className="text-gray-600">{myGallery.location}</p>
+                  </div>
+                </div>
+              </div>
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`pb-4 px-1 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${
-                  activeTab === tab
-                    ? 'text-neutral-900 border-neutral-900'
-                    : 'text-gray-500 border-transparent hover:text-neutral-900'
-                }`}
+                onClick={onCreateExhibition}
+                className="inline-flex items-center gap-2 px-6 py-3 text-base font-semibold text-white bg-neutral-900 hover:bg-neutral-800 rounded-full transition-all shadow-lg hover:shadow-xl"
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                <Plus className="w-5 h-5" />
+                New Exhibition
               </button>
-            ))}
+            </div>
           </div>
         </div>
 
-        {/* Tab Content */}
-        {activeTab === 'exhibitions' ? (
-          <ExhibitionsGrid
-            exhibitions={exhibitions}
-            onEdit={onEditExhibition}
-            onView={onViewExhibition}
-            onManageJurors={(exhibition) => {
-              setSelectedExhibition(exhibition)
-              setShowJurorModal(true)
-            }}
-          />
-        ) : (
-          <SubmissionsTable
-            submissions={submissions}
-            onAssignJurors={(submission) => {
-              setSelectedSubmission(submission)
-              setShowAssignModal(true)
-            }}
-            onUpdateSubmission={handleUpdateSubmission}
-          />
-        )}
+        {/* Stats */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard icon={Calendar} label="Total Exhibitions" value={stats.totalExhibitions} color="primary" />
+            <StatCard icon={TrendingUp} label="Active Exhibitions" value={stats.activeExhibitions} color="success" />
+            <StatCard icon={FileText} label="Total Submissions" value={stats.totalSubmissions} color="accent" />
+            <StatCard icon={DollarSign} label="Total Revenue" value={`$${stats.totalRevenue.toFixed(2)}`} color="primary" />
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 pb-16">
+          {activeTab === 'exhibitions' ? (
+            <ExhibitionsGrid
+              exhibitions={exhibitions}
+              onEdit={onEditExhibition}
+              onView={onViewExhibition}
+              onManageJurors={(exhibition) => {
+                setSelectedExhibition(exhibition)
+                setShowJurorModal(true)
+              }}
+              onManageSubmissions={handleManageSubmissions}
+            />
+          ) : (
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <ListFilter className="w-5 h-5 text-gray-400" />
+                  <span className="text-sm font-bold text-neutral-400 uppercase tracking-widest">Viewing:</span>
+                  <select 
+                    value={filterExhibitionId}
+                    onChange={(e) => setFilterExhibitionId(e.target.value)}
+                    className="bg-neutral-50 border-none text-sm font-bold rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-neutral-900"
+                  >
+                    <option value="all">All Exhibitions</option>
+                    {exhibitions.map(ex => (
+                      <option key={ex.id} value={String(ex.id)}>{ex.title}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {filterExhibitionId !== 'all' && (
+                  <button
+                    onClick={() => setShowBatchAssignModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-bold rounded-lg hover:bg-neutral-800 transition-colors shadow-md"
+                  >
+                    <Users className="w-4 h-4" />
+                    Assign All to Jurors
+                  </button>
+                )}
+              </div>
+
+              {/* 🔧 Gallery Status Removed */}
+              <SubmissionsTable
+                submissions={filterExhibitionId === 'all' 
+                  ? submissions 
+                  : submissions.filter(s => String((s.exhibition as any).id || s.exhibition) === filterExhibitionId)
+                }
+                onAssignJurors={(submission) => {
+                  setSelectedSubmission(submission)
+                  setShowAssignModal(true)
+                }}
+                onUpdateSubmission={handleUpdateSubmission}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Juror Management Modal */}
+      {/* Modals */}
       {showJurorModal && selectedExhibition && (
         <ManageJurorsModal
           exhibition={selectedExhibition}
+          currentUser={currentUser}
           onClose={() => {
             setShowJurorModal(false)
             setSelectedExhibition(null)
@@ -332,6 +373,7 @@ export default function GalleryDashboard({
       {showAssignModal && selectedSubmission && (
         <AssignJurorsModal
           submission={selectedSubmission}
+          currentUser={currentUser}
           onClose={() => {
             setShowAssignModal(false)
             setSelectedSubmission(null)
@@ -343,13 +385,24 @@ export default function GalleryDashboard({
           }}
         />
       )}
+
+      {showBatchAssignModal && filterExhibitionId !== 'all' && (
+        <BatchAssignModal
+          exhibitionId={parseInt(filterExhibitionId)}
+          currentUser={currentUser}
+          onClose={() => setShowBatchAssignModal(false)}
+          onSuccess={() => {
+            setShowBatchAssignModal(false)
+            window.location.reload()
+          }}
+        />
+      )}
     </div>
   )
 }
 
-/**
- * Stat Card
- */
+// --- Sub Components ---
+
 interface StatCardProps {
   icon: any
   label: string
@@ -375,29 +428,23 @@ function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
   )
 }
 
-/**
- * Exhibitions Grid
- */
 interface ExhibitionsGridProps {
   exhibitions: Exhibition[]
   onEdit?: (id: number) => void
   onView?: (id: number) => void
   onManageJurors?: (exhibition: Exhibition) => void
+  onManageSubmissions?: (id: number) => void
 }
 
-function ExhibitionsGrid({ exhibitions, onEdit, onView, onManageJurors }: ExhibitionsGridProps) {
+function ExhibitionsGrid({ exhibitions, onEdit, onView, onManageJurors, onManageSubmissions }: ExhibitionsGridProps) {
   if (exhibitions.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center">
         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
           <Calendar className="w-8 h-8 text-gray-400" />
         </div>
-        <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-          No Exhibitions Yet
-        </h3>
-        <p className="text-gray-600 mb-6">
-          Create your first exhibition to start receiving artwork submissions.
-        </p>
+        <h3 className="text-lg font-semibold text-neutral-900 mb-2">No Exhibitions Yet</h3>
+        <p className="text-gray-600 mb-6">Create your first exhibition to start receiving artwork submissions.</p>
       </div>
     )
   }
@@ -411,32 +458,26 @@ function ExhibitionsGrid({ exhibitions, onEdit, onView, onManageJurors }: Exhibi
           onEdit={onEdit}
           onView={onView}
           onManageJurors={onManageJurors}
+          onManageSubmissions={onManageSubmissions}
         />
       ))}
     </div>
   )
 }
 
-/**
- * Exhibition Card
- */
 interface ExhibitionCardProps {
   exhibition: Exhibition
   onEdit?: (id: number) => void
   onView?: (id: number) => void
   onManageJurors?: (exhibition: Exhibition) => void
+  onManageSubmissions?: (id: number) => void
 }
 
-function ExhibitionCard({ exhibition, onEdit, onView, onManageJurors }: ExhibitionCardProps) {
-  // 🔧 改用 max_selected
-  const selectedCount = (exhibition as any).selectedCount || 0
-  const maxSelected = (exhibition as any).max_selected || 50
-  const isFull = selectedCount >= maxSelected
-  const capacityPercentage = (selectedCount / maxSelected) * 100
-
+function ExhibitionCard({ exhibition, onEdit, onView, onManageJurors, onManageSubmissions }: ExhibitionCardProps) {
+  // 🔧 移除了 Selected Count / Capacity 逻辑
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden border border-neutral-200 hover:border-neutral-300 hover:shadow-xl transition-all">
-      <div className="aspect-[16/9] bg-gray-100 relative overflow-hidden">
+    <div className="group bg-white rounded-2xl overflow-hidden border border-neutral-200 hover:border-neutral-300 hover:shadow-xl transition-all flex flex-col h-full">
+      <div className="aspect-[16/9] bg-gray-100 relative overflow-hidden shrink-0">
         {isMedia(exhibition.cover_image) ? (
           <img
             src={`${PAYLOAD_URL}${exhibition.cover_image.url!}`}
@@ -449,7 +490,6 @@ function ExhibitionCard({ exhibition, onEdit, onView, onManageJurors }: Exhibiti
           </div>
         )}
         
-        {/* Status Badge */}
         <div className="absolute top-3 left-3">
           <span className={`px-3 py-1 rounded-full text-xs font-bold ${
             exhibition.exhibitionStatus === 'open'
@@ -462,36 +502,17 @@ function ExhibitionCard({ exhibition, onEdit, onView, onManageJurors }: Exhibiti
           </span>
         </div>
 
-        {/* Juror Count Badge */}
         <div className="absolute top-3 right-3">
           <div className="px-3 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-semibold text-neutral-900 flex items-center gap-1">
             <Users className="w-3 h-3" />
             <span>{exhibition.jurors ? (exhibition.jurors as any[]).length : 0} Jurors</span>
           </div>
         </div>
-
-        {/* 🔧 容量显示 Badge - 改用 max_selected */}
-        <div className="absolute bottom-3 right-3">
-          <div className={`px-3 py-1 backdrop-blur-sm rounded-full text-xs font-semibold flex items-center gap-1 ${
-            isFull 
-              ? 'bg-red-500/90 text-white' 
-              : capacityPercentage > 80 
-              ? 'bg-yellow-500/90 text-white'
-              : 'bg-white/90 text-neutral-900'
-          }`}>
-            <ImageIcon className="w-3 h-3" />
-            <span>{selectedCount}/{maxSelected}</span>
-          </div>
-        </div>
       </div>
       
-      <div className="p-6">
-        <h3 className="text-lg font-bold text-neutral-900 mb-2 line-clamp-1">
-          {exhibition.title}
-        </h3>
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-          {exhibition.description}
-        </p>
+      <div className="p-6 flex flex-col flex-1">
+        <h3 className="text-lg font-bold text-neutral-900 mb-2 line-clamp-1">{exhibition.title}</h3>
+        <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">{exhibition.description}</p>
         
         <div className="flex items-center justify-between text-sm text-gray-500 mb-4 pb-4 border-b border-neutral-200">
           <div className="flex items-center gap-1">
@@ -525,15 +546,19 @@ function ExhibitionCard({ exhibition, onEdit, onView, onManageJurors }: Exhibiti
             <UserPlus className="w-4 h-4" />
             <span>Manage Jurors</span>
           </button>
+          <button
+            onClick={() => onManageSubmissions && onManageSubmissions(exhibition.id)}
+            className="col-span-2 px-4 py-2 text-sm font-bold text-white bg-neutral-900 rounded-lg hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Manage Submissions</span>
+          </button>
         </div>
       </div>
     </div>
   )
 }
 
-/**
- * Submissions Table
- */
 interface SubmissionsTableProps {
   submissions: Submission[]
   onAssignJurors?: (submission: Submission) => void
@@ -546,38 +571,6 @@ function SubmissionsTable({
   onUpdateSubmission
 }: SubmissionsTableProps) {
   const [updating, setUpdating] = useState<number | null>(null)
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null)
-
-  // 🔧 检查展览容量 - 改用 max_selected
-  const checkExhibitionCapacity = async (exhibitionId: number): Promise<{ 
-    isFull: boolean; 
-    current: number; 
-    max: number;
-    remaining: number;
-  }> => {
-    try {
-      const res = await fetch(`${PAYLOAD_URL}/api/exhibitions/${exhibitionId}?depth=0`, {
-        credentials: 'include'
-      })
-      
-      if (res.ok) {
-        const exhibition = await res.json()
-        const selectedCount = exhibition.selectedCount || 0
-        const maxSelected = exhibition.max_selected || 50
-        
-        return {
-          isFull: selectedCount >= maxSelected,
-          current: selectedCount,
-          max: maxSelected,
-          remaining: Math.max(maxSelected - selectedCount, 0)
-        }
-      }
-    } catch (err) {
-      console.error('Failed to check capacity:', err)
-    }
-    
-    return { isFull: false, current: 0, max: 50, remaining: 50 }
-  }
 
   if (submissions.length === 0) {
     return (
@@ -585,102 +578,10 @@ function SubmissionsTable({
         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
           <FileText className="w-8 h-8 text-gray-400" />
         </div>
-        <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-          No Submissions Yet
-        </h3>
-        <p className="text-gray-600">
-          Submissions will appear here once artists start submitting to your exhibitions.
-        </p>
+        <h3 className="text-lg font-semibold text-neutral-900 mb-2">No Submissions Found</h3>
+        <p className="text-gray-600">Try changing the exhibition filter or wait for new submissions.</p>
       </div>
     )
-  }
-
-  const handleGalleryDecision = async (
-    submissionId: number,
-    newStatus: 'selected' | 'not_selected',
-    exhibitionId: number
-  ) => {
-    if (newStatus === 'selected') {
-      const capacity = await checkExhibitionCapacity(exhibitionId)
-      
-      if (capacity.isFull) {
-        setToast({
-          message: `Exhibition is full! (${capacity.current}/${capacity.max} artworks already selected)`,
-          type: 'warning'
-        })
-        setTimeout(() => setToast(null), 4000)
-        return
-      }
-
-      if (capacity.remaining <= 3 && capacity.remaining > 0) {
-        const proceed = window.confirm(
-          `Only ${capacity.remaining} spot${capacity.remaining === 1 ? '' : 's'} remaining in this exhibition (${capacity.current}/${capacity.max}).\n\nDo you want to select this artwork?`
-        )
-        if (!proceed) return
-      }
-    }
-
-    setUpdating(submissionId)
-
-    try {
-      const res = await fetch(`${PAYLOAD_URL}/api/submissions/${submissionId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ galleryStatus: newStatus }),
-      })
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.message || err.error || 'Failed to update status')
-      }
-      await new Promise(resolve => setTimeout(resolve, 500))
-      const refreshRes = await fetch(
-        `${PAYLOAD_URL}/api/submissions/${submissionId}?depth=3`,
-        { credentials: 'include' }
-      )
-
-      if (refreshRes.ok) {
-        const updated = await refreshRes.json()
-        
-        if (onUpdateSubmission) {
-          onUpdateSubmission(updated as Submission)
-        }
-        const exhibitionRes = await fetch(
-          `${PAYLOAD_URL}/api/exhibitions/${exhibitionId}?depth=0`,
-          { credentials: 'include' }
-        )
-        if (exhibitionRes.ok) {
-        const exhibitionData = await exhibitionRes.json()
-        console.log('Updated exhibition:', exhibitionData) // 🔍 调试用
-        
-        if (newStatus === 'selected') {
-          setToast({
-            message: `✓ Artwork selected! (${exhibitionData.selectedCount || 0}/${exhibitionData.max_selected || 50} spots filled)`,
-            type: 'success'
-          })
-        } else {
-          setToast({
-            message: `✓ Artwork deselected. (${(exhibitionData.max_selected || 50) - (exhibitionData.selectedCount || 0)} spots available)`,
-            type: 'success'
-          })
-        }
-      }
-        setTimeout(() => setToast(null), 3000)
-      } else {
-        throw new Error('Failed to refresh submission data')
-      }
-    } catch (err: any) {
-      console.error('Update gallery status error:', err)
-      
-      setToast({
-        message: err.message || 'Failed to update gallery status',
-        type: 'error'
-      })
-      setTimeout(() => setToast(null), 3000)
-    } finally {
-      setUpdating(null)
-    }
   }
 
   return (
@@ -690,27 +591,12 @@ function SubmissionsTable({
           <table className="w-full">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Artwork
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Artist
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Exhibition
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Submitted
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Jury Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Gallery Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Artwork</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Artist</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Exhibition</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Submitted</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Jury Status</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200">
@@ -718,21 +604,10 @@ function SubmissionsTable({
                 const artist = typeof submission.artist === 'object' ? submission.artist : null
                 const artwork = typeof submission.artwork === 'object' ? submission.artwork : null
                 const exhibitionData = typeof submission.exhibition === 'object' ? submission.exhibition : null
-                const exhibitionId = exhibitionData?.id || 0
-
-                // 🔧 改用 max_selected
-                const selectedCount = (exhibitionData as any)?.selectedCount || 0
-                const maxSelected = (exhibitionData as any)?.max_selected || 50
-                const isFull = selectedCount >= maxSelected
-                const isNearlyFull = selectedCount >= maxSelected * 0.8
 
                 const assignedJurors = (((submission as any).assignedJurors) || []) as any[]
                 const assignedNames = assignedJurors
-                  .map((j: any) =>
-                    typeof j === 'object'
-                      ? (j.name || j.email || '')
-                      : ''
-                  )
+                  .map((j: any) => typeof j === 'object' ? (j.name || j.email || '') : '')
                   .filter(Boolean)
                   .join(', ')
 
@@ -745,15 +620,13 @@ function SubmissionsTable({
                         <div className="w-12 h-12 bg-neutral-200 rounded-lg overflow-hidden">
                           {artwork && isMedia((artwork as any).image) && (
                             <img
-                              src={`${PAYLOAD_URL}${(artwork as any).image.url!}`}
+                              src={`${PAYLOAD_URL}${(artwork as any).image.url}`}
                               alt={artwork.title}
                               className="w-full h-full object-cover"
                             />
                           )}
                         </div>
-                        <span className="text-sm font-medium text-neutral-900">
-                          {artwork?.title || 'Untitled'}
-                        </span>
+                        <span className="text-sm font-medium text-neutral-900">{artwork?.title || 'Untitled'}</span>
                       </div>
                     </td>
 
@@ -761,22 +634,8 @@ function SubmissionsTable({
                       {artist?.name || artist?.email || 'Unknown'}
                     </td>
 
-                    {/* 🔧 Exhibition 列 - 改用 max_selected */}
                     <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm text-gray-900">
-                          {exhibitionData?.title || 'N/A'}
-                        </span>
-                        <span className={`text-xs font-medium ${
-                          isFull 
-                            ? 'text-red-600' 
-                            : isNearlyFull 
-                            ? 'text-yellow-600'
-                            : 'text-gray-500'
-                        }`}>
-                          {selectedCount}/{maxSelected} selected
-                        </span>
-                      </div>
+                      <span className="text-sm text-gray-900">{exhibitionData?.title || 'N/A'}</span>
                     </td>
 
                     <td className="px-6 py-4 text-sm text-gray-600">
@@ -784,39 +643,20 @@ function SubmissionsTable({
                     </td>
 
                     <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                          submission.juryStatus === 'accepted'
-                            ? 'bg-green-50 text-green-700'
-                            : submission.juryStatus === 'rejected'
-                            ? 'bg-red-50 text-red-700'
-                            : 'bg-yellow-50 text-yellow-700'
-                        }`}
-                      >
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                        submission.juryStatus === 'accepted' ? 'bg-green-50 text-green-700' : 
+                        submission.juryStatus === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700'
+                      }`}>
                         {submission.juryStatus?.toUpperCase()}
                       </span>
                     </td>
 
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                          submission.galleryStatus === 'selected'
-                            ? 'bg-green-50 text-green-700'
-                            : submission.galleryStatus === 'not_selected'
-                            ? 'bg-red-50 text-red-700'
-                            : 'bg-yellow-50 text-yellow-700'
-                        }`}
-                      >
-                        {submission.galleryStatus?.toUpperCase()}
-                      </span>
-                    </td>
+                    {/* 🔧 Gallery Status Removed from Table */}
 
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-2">
                         <div className="text-xs text-gray-500">
-                          {assignedJurors.length
-                            ? `Assigned: ${assignedNames}`
-                            : 'No juror assigned'}
+                          {assignedJurors.length ? `Assigned: ${assignedNames}` : 'No juror assigned'}
                         </div>
 
                         <div className="flex flex-wrap gap-2 items-center">
@@ -826,88 +666,10 @@ function SubmissionsTable({
                               disabled={isUpdating}
                               className="px-2.5 py-1 text-xs font-semibold text-neutral-900 bg-white border border-neutral-200 rounded-full hover:bg-neutral-50 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <Users className="w-3 h-3" />
-                              Assign
+                              <Users className="w-3 h-3" /> Assign
                             </button>
                           )}
-
-                          {submission.juryStatus === 'accepted' && (
-                            <>
-                              {(submission.galleryStatus === 'pending' || submission.galleryStatus === 'not_selected') && (
-                                <>
-                                  <button
-                                    onClick={() => handleGalleryDecision(submission.id, 'selected', exhibitionId)}
-                                    disabled={isUpdating || isFull}
-                                    className={`p-1.5 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative ${
-                                      isFull
-                                        ? 'text-gray-400 cursor-not-allowed'
-                                        : 'text-green-600 hover:bg-green-50'
-                                    }`}
-                                    title={
-                                      isFull 
-                                        ? `Exhibition full (${selectedCount}/${maxSelected})` 
-                                        : isNearlyFull
-                                        ? `Select (${maxSelected - selectedCount} spots left)`
-                                        : "Select for exhibition"
-                                    }
-                                  >
-                                    {isUpdating ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <CheckCircle className="w-4 h-4" />
-                                    )}
-                                  </button>
-
-                                  {submission.galleryStatus === 'pending' && (
-                                    <button
-                                      onClick={() => handleGalleryDecision(submission.id, 'not_selected', exhibitionId)}
-                                      disabled={isUpdating}
-                                      className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed relative"
-                                      title="Do not select"
-                                    >
-                                      {isUpdating ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                      ) : (
-                                        <XCircle className="w-4 h-4" />
-                                      )}
-                                    </button>
-                                  )}
-                                </>
-                              )}
-
-                              {submission.galleryStatus === 'selected' && (
-                                <button
-                                  onClick={() => handleGalleryDecision(submission.id, 'not_selected', exhibitionId)}
-                                  disabled={isUpdating}
-                                  className="px-2.5 py-1 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-full hover:bg-red-100 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  <XCircle className="w-3 h-3" />
-                                  Deselect
-                                </button>
-                              )}
-                            </>
-                          )}
                         </div>
-
-                        {/* 🔧 容量警告 - 改用 max_selected */}
-                        {submission.juryStatus === 'accepted' &&
-                          (submission.galleryStatus === 'pending' || submission.galleryStatus === 'not_selected') &&
-                          isFull && (
-                            <div className="flex items-center gap-1 text-xs text-red-600 font-medium">
-                              <AlertCircle className="w-3 h-3" />
-                              Exhibition full ({selectedCount}/{maxSelected})
-                            </div>
-                          )}
-
-                        {submission.juryStatus === 'accepted' &&
-                          (submission.galleryStatus === 'pending' || submission.galleryStatus === 'not_selected') &&
-                          !isFull &&
-                          isNearlyFull && (
-                            <div className="flex items-center gap-1 text-xs text-yellow-600 font-medium">
-                              <AlertCircle className="w-3 h-3" />
-                              {maxSelected - selectedCount} spots left
-                            </div>
-                          )}
                       </div>
                     </td>
                   </tr>
@@ -917,42 +679,20 @@ function SubmissionsTable({
           </table>
         </div>
       </div>
-
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-2">
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border-2 ${
-            toast.type === 'success'
-              ? 'bg-green-50 border-green-500 text-green-900'
-              : toast.type === 'warning'
-              ? 'bg-yellow-50 border-yellow-500 text-yellow-900'
-              : 'bg-red-50 border-red-500 text-red-900'
-          }`}>
-            <div className="flex items-center gap-3">
-              {toast.type === 'success' ? (
-                <CheckCircle className="w-5 h-5" />
-              ) : (
-                <AlertCircle className="w-5 h-5" />
-              )}
-              <span className="font-medium">{toast.message}</span>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }
 
-/**
- * Manage Jurors Modal
- */
+// --- Manage Jurors Modal ---
+
 interface ManageJurorsModalProps {
   exhibition: Exhibition
+  currentUser: User | null
   onClose: () => void
   onSuccess: (jurorIds: number[]) => void
 }
 
-function ManageJurorsModal({ exhibition, onClose, onSuccess }: ManageJurorsModalProps) {
+function ManageJurorsModal({ exhibition, currentUser, onClose, onSuccess }: ManageJurorsModalProps) {
   const [allJurors, setAllJurors] = useState<User[]>([])
   const [selectedJurors, setSelectedJurors] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
@@ -965,14 +705,18 @@ function ManageJurorsModal({ exhibition, onClose, onSuccess }: ManageJurorsModal
     async function fetchJurors() {
       try {
         const response = await fetch(
-          `${PAYLOAD_URL}/api/users?where[appRole][equals]=juror`,
+          `${PAYLOAD_URL}/api/users?where[or][0][appRole][equals]=juror&where[or][1][appRole][equals]=gallery&limit=100`,
           { credentials: 'include' }
         )
-        
         if (response.ok) {
           const data = await response.json()
-          setAllJurors(data.docs || [])
+          let users = data.docs || []
           
+          if (currentUser && !users.find((u: any) => u.id === currentUser.id)) {
+            users = [currentUser, ...users]
+          }
+          
+          setAllJurors(users)
           const currentJurors = new Set(
             (exhibition.jurors as any[] || []).map((j: any) => String(j.id || j))
           )
@@ -984,14 +728,12 @@ function ManageJurorsModal({ exhibition, onClose, onSuccess }: ManageJurorsModal
         setLoading(false)
       }
     }
-
     fetchJurors()
-  }, [exhibition])
+  }, [exhibition, currentUser])
 
   const handleInviteJuror = async (e: React.FormEvent) => {
     e.preventDefault()
     setInviting(true)
-
     try {
       const response = await fetch(`${PAYLOAD_URL}/api/invite-juror`, {
         method: 'POST',
@@ -1004,33 +746,25 @@ function ManageJurorsModal({ exhibition, onClose, onSuccess }: ManageJurorsModal
           galleryId: typeof exhibition.gallery === 'object' ? exhibition.gallery.id : exhibition.gallery,
         }),
       })
-
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || 'Failed to invite juror')
       }
-
-      const result = await response.json()
       
-      const jurorResponse = await fetch(
-        `${PAYLOAD_URL}/api/users?where[appRole][equals]=juror`,
+      const listResponse = await fetch(
+        `${PAYLOAD_URL}/api/users?where[or][0][appRole][equals]=juror&where[or][1][appRole][equals]=gallery&limit=100`,
         { credentials: 'include' }
       )
-      
-      if (jurorResponse.ok) {
-        const data = await jurorResponse.json()
+      if (listResponse.ok) {
+        const data = await listResponse.json()
         setAllJurors(data.docs || [])
       }
-
-      setSelectedJurors(prev => new Set([...prev, String(result.juror.id)]))
       
+      const result = await response.json()
+      setSelectedJurors(prev => new Set([...prev, String(result.juror.id)]))
       setInviteForm({ email: '', name: '' })
       setShowInviteForm(false)
-      
-      alert(result.isNewUser 
-        ? `Invitation sent to ${inviteForm.email}!` 
-        : `${inviteForm.name} has been added as a juror.`
-      )
+      alert(result.isNewUser ? `Invitation sent to ${inviteForm.email}!` : `${inviteForm.name} has been added as a juror.`)
     } catch (err: any) {
       alert(err.message || 'Failed to invite juror')
     } finally {
@@ -1041,33 +775,23 @@ function ManageJurorsModal({ exhibition, onClose, onSuccess }: ManageJurorsModal
   const handleToggleJuror = (jurorId: string) => {
     setSelectedJurors(prev => {
       const newSet = new Set(prev)
-      if (newSet.has(jurorId)) {
-        newSet.delete(jurorId)
-      } else {
-        newSet.add(jurorId)
-      }
+      if (newSet.has(jurorId)) newSet.delete(jurorId)
+      else newSet.add(jurorId)
       return newSet
     })
   }
 
   const handleSave = async () => {
     setSaving(true)
-
     try {
       const jurorIds = Array.from(selectedJurors).map(id => parseInt(id))
-
       const res = await fetch(`${PAYLOAD_URL}/api/exhibitions/${exhibition.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ jurors: jurorIds }),
       })
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Failed to update jurors')
-      }
-
+      if (!res.ok) throw new Error('Failed to update jurors')
       onSuccess(jurorIds)
     } catch (err) {
       console.error(err)
@@ -1084,86 +808,41 @@ function ManageJurorsModal({ exhibition, onClose, onSuccess }: ManageJurorsModal
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-neutral-900">Manage Jurors</h2>
-              <p className="text-sm text-neutral-600 mt-1">
-                Select jurors for {exhibition.title}
-              </p>
+              <p className="text-sm text-neutral-600 mt-1">Select jurors for {exhibition.title}</p>
             </div>
             <button
               onClick={() => setShowInviteForm(!showInviteForm)}
               className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
-              <UserPlus className="w-4 h-4" />
-              Invite New Juror
+              <UserPlus className="w-4 h-4" /> Invite New Juror
             </button>
           </div>
         </div>
-
         {showInviteForm && (
           <div className="p-6 bg-blue-50 border-b border-blue-100">
             <form onSubmit={handleInviteJuror} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-900 mb-2">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={inviteForm.name}
-                    onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
-                    required
-                    placeholder="John Doe"
-                    className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <label className="block text-sm font-medium text-neutral-900 mb-2">Name *</label>
+                  <input type="text" value={inviteForm.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} required placeholder="John Doe" className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-900 mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    value={inviteForm.email}
-                    onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                    required
-                    placeholder="juror@email.com"
-                    className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <label className="block text-sm font-medium text-neutral-900 mb-2">Email *</label>
+                  <input type="email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} required placeholder="juror@email.com" className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
               </div>
               <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowInviteForm(false)}
-                  className="px-4 py-2 border border-neutral-300 text-neutral-900 rounded-lg hover:bg-neutral-50 transition-colors text-sm font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={inviting}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold disabled:opacity-50 flex items-center gap-2"
-                >
-                  {inviting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Send Invitation
-                    </>
-                  )}
+                <button type="button" onClick={() => setShowInviteForm(false)} className="px-4 py-2 border border-neutral-300 text-neutral-900 rounded-lg hover:bg-neutral-50 transition-colors text-sm font-medium">Cancel</button>
+                <button type="submit" disabled={inviting} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold disabled:opacity-50 flex items-center gap-2">
+                  {inviting ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : <><Send className="w-4 h-4" /> Send Invitation</>}
                 </button>
               </div>
             </form>
           </div>
         )}
-
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
-            </div>
+            <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-neutral-400" /></div>
           ) : allJurors.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
@@ -1173,72 +852,31 @@ function ManageJurorsModal({ exhibition, onClose, onSuccess }: ManageJurorsModal
           ) : (
             <div className="space-y-2">
               {allJurors.map((juror) => (
-                <button
-                  key={juror.id}
-                  onClick={() => handleToggleJuror(String(juror.id))}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
-                    selectedJurors.has(String(juror.id))
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-neutral-200 hover:border-neutral-300'
-                  }`}
-                >
+                <button key={juror.id} onClick={() => handleToggleJuror(String(juror.id))} className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${selectedJurors.has(String(juror.id)) ? 'border-blue-500 bg-blue-50' : 'border-neutral-200 hover:border-neutral-300'}`}>
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      selectedJurors.has(String(juror.id))
-                        ? 'bg-blue-600'
-                        : 'bg-neutral-200'
-                    }`}>
-                      <Users className={`w-5 h-5 ${
-                        selectedJurors.has(String(juror.id))
-                          ? 'text-white'
-                          : 'text-neutral-500'
-                      }`} />
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedJurors.has(String(juror.id)) ? 'bg-blue-600' : 'bg-neutral-200'}`}>
+                      <Users className={`w-5 h-5 ${selectedJurors.has(String(juror.id)) ? 'text-white' : 'text-neutral-500'}`} />
                     </div>
                     <div className="text-left">
                       <div className="font-semibold text-neutral-900">
                         {juror.name || 'Unnamed Juror'}
+                        {juror.id === currentUser?.id && <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">YOU</span>}
                       </div>
                       <div className="text-sm text-gray-600">{juror.email}</div>
                     </div>
                   </div>
-                  {selectedJurors.has(String(juror.id)) && (
-                    <CheckCircle className="w-5 h-5 text-blue-600" />
-                  )}
+                  {selectedJurors.has(String(juror.id)) && <CheckCircle className="w-5 h-5 text-blue-600" />}
                 </button>
               ))}
             </div>
           )}
         </div>
-
         <div className="p-6 border-t border-neutral-200 bg-neutral-50">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-sm text-gray-600">
-              {selectedJurors.size} {selectedJurors.size === 1 ? 'juror' : 'jurors'} selected
-            </div>
-          </div>
+          <div className="flex items-center justify-between mb-4 text-sm text-gray-600">{selectedJurors.size} {selectedJurors.size === 1 ? 'juror' : 'jurors'} assigned</div>
           <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-6 py-3 border-2 border-neutral-300 text-neutral-900 font-semibold rounded-full hover:bg-neutral-100 transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 px-6 py-3 bg-neutral-900 text-white font-semibold rounded-full hover:bg-neutral-800 transition-all disabled:opacity-50 inline-flex items-center justify-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Check className="w-5 h-5" />
-                  Save Jurors
-                </>
-              )}
+            <button onClick={onClose} className="flex-1 px-6 py-3 border-2 border-neutral-300 text-neutral-900 font-semibold rounded-full hover:bg-neutral-100 transition-all">Cancel</button>
+            <button onClick={handleSave} disabled={saving || allJurors.length === 0} className="flex-1 px-6 py-3 bg-neutral-900 text-white font-semibold rounded-full hover:bg-neutral-800 transition-all disabled:opacity-50 inline-flex items-center justify-center gap-2">
+              {saving ? <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</> : <><Check className="w-5 h-5" /> Save Jurors</>}
             </button>
           </div>
         </div>
@@ -1247,52 +885,57 @@ function ManageJurorsModal({ exhibition, onClose, onSuccess }: ManageJurorsModal
   )
 }
 
-/**
- * Assign Jurors Modal
- */
 interface AssignJurorsModalProps {
   submission: Submission
+  currentUser: User | null
   onClose: () => void
   onSuccess: (updated: Submission) => void
 }
 
-function AssignJurorsModal({ submission, onClose, onSuccess }: AssignJurorsModalProps) {
-  const [availableJurors, setAvailableJurors] = useState<User[]>([])
+function AssignJurorsModal({ submission, currentUser, onClose, onSuccess }: AssignJurorsModalProps) {
+  const [allUsers, setAllUsers] = useState<User[]>([])
   const [selectedJurors, setSelectedJurors] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    const exhibitionData = typeof submission.exhibition === 'object'
-      ? (submission.exhibition as any)
-      : null
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const response = await fetch(
+          `${PAYLOAD_URL}/api/users?where[or][0][appRole][equals]=juror&where[or][1][appRole][equals]=gallery&limit=100`, 
+          { credentials: 'include' }
+        )
 
-    if (!exhibitionData || !exhibitionData.jurors) {
-      console.warn('No jurors found in exhibition')
-      setAvailableJurors([])
-      setLoading(false)
-      return
+        if (response.ok) {
+          const data = await response.json()
+          let users = (data.docs || []) as User[]
+
+          if (currentUser) {
+            const meIndex = users.findIndex(u => u.id === currentUser.id)
+            if (meIndex > -1) {
+              const [me] = users.splice(meIndex, 1)
+              users = [me, ...users]
+            } else {
+              users = [currentUser, ...users]
+            }
+          }
+
+          setAllUsers(users)
+
+          const assigned = (submission.assignedJurors || []) as any[]
+          const assignedIds = assigned.map((j: any) => String(typeof j === 'object' ? j.id : j))
+          setSelectedJurors(new Set(assignedIds))
+        }
+      } catch (err) {
+        console.error('Failed to fetch users:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
-    const jurorsFromExhibition = (exhibitionData.jurors || []) as any[]
-
-    const normalized = jurorsFromExhibition
-      .map((j: any) => {
-        if (typeof j === 'object' && j !== null) {
-          return j as User
-        }
-        return null
-      })
-      .filter(Boolean) as User[]
-
-    setAvailableJurors(normalized)
-
-    const assigned = (submission.assignedJurors || []) as any[]
-    const assignedIds = assigned.map((j: any) => String(typeof j === 'object' ? j.id : j))
-    setSelectedJurors(new Set(assignedIds))
-
-    setLoading(false)
-  }, [submission])
+    fetchData()
+  }, [submission, currentUser])
 
   const toggleJuror = (id: string) => {
     setSelectedJurors(prev => {
@@ -1307,30 +950,18 @@ function AssignJurorsModal({ submission, onClose, onSuccess }: AssignJurorsModal
     setSaving(true)
     try {
       const jurorIds = Array.from(selectedJurors).map(id => parseInt(id, 10))
+      
+      const res = await fetch(`${PAYLOAD_URL}/api/submissions/${submission.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ assignedJurors: jurorIds }),
+      })
 
-      const res = await fetch(
-        `${PAYLOAD_URL}/api/submissions/${submission.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ 
-            assignedJurors: jurorIds,
-          }),
-        }
-      )
+      if (!res.ok) throw new Error('Failed to assign jurors')
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        console.error('Assign jurors error:', err)
-        throw new Error(err.message || err.error || 'Failed to assign jurors')
-      }
-
-      const refreshRes = await fetch(
-        `${PAYLOAD_URL}/api/submissions/${submission.id}?depth=3`,
-        { credentials: 'include' }
-      )
-
+      const refreshRes = await fetch(`${PAYLOAD_URL}/api/submissions/${submission.id}?depth=3`, { credentials: 'include' })
+      
       if (refreshRes.ok) {
         const updated = await refreshRes.json()
         onSuccess(updated as Submission)
@@ -1338,7 +969,6 @@ function AssignJurorsModal({ submission, onClose, onSuccess }: AssignJurorsModal
         throw new Error('Failed to refresh submission data')
       }
     } catch (err: any) {
-      console.error('handleSave error:', err)
       alert(err.message || 'Failed to assign jurors')
     } finally {
       setSaving(false)
@@ -1351,73 +981,53 @@ function AssignJurorsModal({ submission, onClose, onSuccess }: AssignJurorsModal
         <div className="p-6 border-b border-neutral-200">
           <h2 className="text-2xl font-bold text-neutral-900">Assign Jurors</h2>
           <p className="text-sm text-neutral-600 mt-1">
-            Assign jurors to review "
-            {typeof submission.artwork === 'object'
-              ? (submission.artwork as any).title || 'Artwork'
-              : 'Artwork'}
-            "
+            Assign jurors to review "{typeof submission.artwork === 'object' ? (submission.artwork as any).title || 'Artwork' : 'Artwork'}"
           </p>
         </div>
-
+        
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />
             </div>
-          ) : availableJurors.length === 0 ? (
+          ) : allUsers.length === 0 ? (
             <div className="text-center py-12">
               <Users className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-              <p className="text-neutral-600 mb-2">
-                No jurors assigned to this exhibition yet.
-              </p>
-              <p className="text-sm text-gray-500 mb-6">
-                Please add jurors to the exhibition in "Manage Jurors" first.
-              </p>
-              <button
-                onClick={onClose}
-                className="px-4 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors text-sm font-semibold"
-              >
-                Close
-              </button>
+              <p className="text-neutral-600 mb-2">No eligible users found.</p>
+              <button onClick={onClose} className="px-4 py-2 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors text-sm font-semibold">Close</button>
             </div>
           ) : (
             <div className="space-y-2">
-              {availableJurors.map(juror => (
-                <button
-                  key={juror.id}
-                  onClick={() => toggleJuror(String(juror.id))}
+              {allUsers.map(user => (
+                <button 
+                  key={user.id} 
+                  onClick={() => toggleJuror(String(user.id))} 
                   className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
-                    selectedJurors.has(String(juror.id))
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-neutral-200 hover:border-neutral-300'
+                    selectedJurors.has(String(user.id)) 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-neutral-200 hover:border-neutral-300'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        selectedJurors.has(String(juror.id))
-                          ? 'bg-blue-600'
-                          : 'bg-neutral-200'
-                      }`}
-                    >
-                      <Users
-                        className={`w-5 h-5 ${
-                          selectedJurors.has(String(juror.id))
-                            ? 'text-white'
-                            : 'text-neutral-500'
-                        }`}
-                      />
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedJurors.has(String(user.id)) ? 'bg-blue-600' : 'bg-neutral-200'}`}>
+                      <Users className={`w-5 h-5 ${selectedJurors.has(String(user.id)) ? 'text-white' : 'text-neutral-500'}`} />
                     </div>
                     <div className="text-left">
-                      <div className="font-semibold text-neutral-900">
-                        {juror.name || 'Unnamed Juror'}
+                      <div className="font-semibold text-neutral-900 flex items-center gap-2">
+                        {user.name || 'Unnamed User'}
+                        {/* 标记自己 */}
+                        {user.id === currentUser?.id && (
+                          <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 font-bold">YOU</span>
+                        )}
+                        {/* 标记是否是 Gallery 角色 */}
+                        {user.appRole === 'gallery' && user.id !== currentUser?.id && (
+                          <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded border border-purple-200 font-bold">GALLERY</span>
+                        )}
                       </div>
-                      <div className="text-sm text-gray-600">{juror.email}</div>
+                      <div className="text-sm text-gray-600">{user.email}</div>
                     </div>
                   </div>
-                  {selectedJurors.has(String(juror.id)) && (
-                    <CheckCircle className="w-5 h-5 text-blue-600" />
-                  )}
+                  {selectedJurors.has(String(user.id)) && <CheckCircle className="w-5 h-5 text-blue-600" />}
                 </button>
               ))}
             </div>
@@ -1426,33 +1036,165 @@ function AssignJurorsModal({ submission, onClose, onSuccess }: AssignJurorsModal
 
         <div className="p-6 border-t border-neutral-200 bg-neutral-50">
           <div className="flex items-center justify-between mb-4 text-sm text-gray-600">
-            {selectedJurors.size} {selectedJurors.size === 1 ? 'juror' : 'jurors'} assigned
+            {selectedJurors.size} {selectedJurors.size === 1 ? 'user' : 'users'} assigned
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-6 py-3 border-2 border-neutral-300 text-neutral-900 font-semibold rounded-full hover:bg-neutral-100 transition-all"
+            <button onClick={onClose} className="flex-1 px-6 py-3 border-2 border-neutral-300 text-neutral-900 font-semibold rounded-full hover:bg-neutral-100 transition-all">Cancel</button>
+            <button 
+              onClick={handleSave} 
+              disabled={saving} 
+              className="flex-1 px-6 py-3 bg-neutral-900 text-white font-semibold rounded-full hover:bg-neutral-800 transition-all disabled:opacity-50 inline-flex items-center justify-center gap-2"
             >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving || availableJurors.length === 0}
-              className="flex-1 px-6 py-3 bg-neutral-900 text-white font-semibold rounded-full hover:bg-neutral-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Check className="w-5 h-5" />
-                  Save
-                </>
-              )}
+              {saving ? <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</> : <><Check className="w-5 h-5" /> Save</>}
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface BatchAssignModalProps {
+  exhibitionId: number
+  currentUser: User | null
+  onClose: () => void
+  onSuccess: () => void
+}
+
+function BatchAssignModal({ exhibitionId, currentUser, onClose, onSuccess }: BatchAssignModalProps) {
+  const [jurors, setJurors] = useState<User[]>([])
+  const [selectedJurors, setSelectedJurors] = useState<Set<string>>(new Set())
+  const [loading, setLoading] = useState(true)
+  const [processing, setProcessing] = useState(false)
+  const [stats, setStats] = useState({ submissionCount: 0 })
+
+  useEffect(() => {
+    async function init() {
+      try {
+        const exRes = await fetch(`${PAYLOAD_URL}/api/exhibitions/${exhibitionId}?depth=1`, { credentials: 'include' })
+        const exData = await exRes.json()
+        
+        let availableJurors: User[] = []
+        if (Array.isArray(exData.jurors)) {
+          availableJurors = exData.jurors
+        }
+
+        if (currentUser) {
+          const isOwnerInList = availableJurors.some((j: any) => j.id === currentUser.id)
+          if (!isOwnerInList) {
+            availableJurors = [currentUser, ...availableJurors]
+          }
+        }
+
+        setJurors(availableJurors)
+
+        const subRes = await fetch(`${PAYLOAD_URL}/api/submissions?where[exhibition][equals]=${exhibitionId}&depth=0`, { credentials: 'include' })
+        const subData = await subRes.json()
+        setStats({ submissionCount: subData.totalDocs || 0 })
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    init()
+  }, [exhibitionId, currentUser])
+
+  const toggleJuror = (id: string) => {
+    setSelectedJurors(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handleBatchAssign = async () => {
+    if (selectedJurors.size === 0) return
+    setProcessing(true)
+
+    try {
+      const subRes = await fetch(`${PAYLOAD_URL}/api/submissions?where[exhibition][equals]=${exhibitionId}&limit=1000&depth=0`, { credentials: 'include' })
+      const subData = await subRes.json()
+      const submissions = subData.docs || []
+      const jurorIds = Array.from(selectedJurors).map(id => parseInt(id))
+
+      const updatePromises = submissions.map((sub: any) => 
+        fetch(`${PAYLOAD_URL}/api/submissions/${sub.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ assignedJurors: jurorIds }),
+        })
+      )
+
+      await Promise.all(updatePromises)
+      alert(`Successfully assigned jurors to ${submissions.length} submissions!`)
+      onSuccess()
+
+    } catch (err: any) {
+      alert('Batch assign failed: ' + err.message)
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+        <div className="p-6 border-b border-neutral-200">
+          <h2 className="text-xl font-bold text-neutral-900">Batch Assign Jurors</h2>
+          <p className="text-sm text-neutral-500 mt-1">Assigning to <span className="font-bold text-neutral-900">{stats.submissionCount}</span> submissions</p>
+        </div>
+        <div className="p-6 max-h-[60vh] overflow-y-auto">
+          {loading ? (
+             <div className="flex justify-center"><Loader2 className="animate-spin text-neutral-400" /></div>
+          ) : jurors.length === 0 ? (
+             <p className="text-center text-gray-500">No jurors found.</p>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Select Jurors</p>
+              {jurors.map(juror => (
+                <button
+                  key={juror.id}
+                  onClick={() => toggleJuror(String(juror.id))}
+                  className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
+                    selectedJurors.has(String(juror.id)) 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-neutral-100 hover:border-neutral-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                       selectedJurors.has(String(juror.id)) ? 'bg-blue-600 text-white' : 'bg-neutral-200 text-neutral-600'
+                    }`}>
+                      {juror.name?.[0] || 'U'}
+                    </div>
+                    <div className="text-left">
+                      <span className="font-medium text-sm block">
+                        {juror.id === currentUser?.id ? `${juror.name} (Me)` : juror.name}
+                      </span>
+                      {juror.id === currentUser?.id && (
+                        <span className="text-[10px] text-blue-600 font-bold bg-blue-100 px-1.5 py-0.5 rounded">GALLERY</span>
+                      )}
+                    </div>
+                  </div>
+                  {selectedJurors.has(String(juror.id)) && <CheckCircle className="w-5 h-5 text-blue-600" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="p-6 border-t border-neutral-100 bg-neutral-50 flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 font-semibold text-gray-600 hover:bg-neutral-200 rounded-lg transition-colors">Cancel</button>
+          <button 
+            onClick={handleBatchAssign}
+            disabled={processing || selectedJurors.size === 0}
+            className="flex-1 py-2.5 bg-neutral-900 text-white font-bold rounded-lg hover:bg-neutral-800 disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {processing ? <Loader2 className="animate-spin w-4 h-4" /> : <Users className="w-4 h-4" />}
+            {processing ? 'Assigning...' : 'Assign to All'}
+          </button>
         </div>
       </div>
     </div>

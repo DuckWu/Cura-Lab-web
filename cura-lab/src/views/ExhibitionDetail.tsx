@@ -145,10 +145,20 @@ export default function ExhibitionDetail({ id, onBack, onGalleryClick, currentUs
     )
   }
 
+  // 🟢 核心修复逻辑开始
   const daysRemaining = getDaysRemaining(exhibition.submission_deadline)
-  const isOpen = daysRemaining !== null && daysRemaining > 0
-  const isClosingSoon = daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0
+  
+  // 1. 获取后台真实状态，如果未定义则默认为 draft
+  const backendStatus = exhibition.exhibitionStatus || 'draft'
+  
+  // 2. 严格的开启检查：必须后台是 'open' 且 日期有效
+  const isOpen = backendStatus === 'open' && (daysRemaining === null || daysRemaining > 0)
+  
+  // 3. 即将截止检查 (仅在开启时有效)
+  const isClosingSoon = isOpen && daysRemaining !== null && daysRemaining <= 7
+  
   const isArtist = currentUser?.appRole === 'artist'
+  // 🟢 核心修复逻辑结束
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50">
@@ -188,8 +198,17 @@ export default function ExhibitionDetail({ id, onBack, onGalleryClick, currentUs
                   Open for Submissions
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-neutral-600 rounded-full shadow-lg">
-                  Closed
+                <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-white rounded-full shadow-lg ${
+                  backendStatus === 'jury_review' ? 'bg-purple-600' :
+                  backendStatus === 'finalized' ? 'bg-blue-600' :
+                  backendStatus === 'on_display' ? 'bg-indigo-600' :
+                  'bg-neutral-600'
+                }`}>
+                  {/* 显示具体状态 */}
+                  {backendStatus === 'jury_review' ? 'In Jury Review' :
+                   backendStatus === 'finalized' ? 'Selection Finalized' :
+                   backendStatus === 'on_display' ? 'On Display' :
+                   'Closed'}
                 </span>
               )}
 
@@ -246,7 +265,7 @@ export default function ExhibitionDetail({ id, onBack, onGalleryClick, currentUs
               </div>
             </div>
 
-            {/* CTA Button */}
+            {/* CTA Button - 🟢 仅在 isOpen 为 true 时显示 */}
             {isOpen && (
               <div className="mt-8">
                 {isArtist ? (
@@ -258,7 +277,7 @@ export default function ExhibitionDetail({ id, onBack, onGalleryClick, currentUs
                     Submit Your Artwork
                   </button>
                 ) : currentUser ? (
-                  <div className="px-8 py-4 bg-white/20 backdrop-blur-sm rounded-full text-white">
+                  <div className="px-8 py-4 bg-white/20 backdrop-blur-sm rounded-full text-white inline-block">
                     Only artists can submit artworks
                   </div>
                 ) : (
@@ -475,7 +494,7 @@ export default function ExhibitionDetail({ id, onBack, onGalleryClick, currentUs
                 </ul>
               </div>
 
-              {/* Status Card */}
+              {/* 🟢 Status Card (侧边栏状态卡片) */}
               <div className={`rounded-2xl border p-6 ${
                 isOpen 
                   ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'
@@ -485,7 +504,11 @@ export default function ExhibitionDetail({ id, onBack, onGalleryClick, currentUs
                 <p className={`text-sm ${isOpen ? 'text-green-700' : 'text-neutral-600'}`}>
                   {isOpen 
                     ? `This exhibition is accepting submissions. ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} remaining.`
-                    : 'This exhibition is no longer accepting submissions.'
+                    : backendStatus === 'jury_review' 
+                    ? 'Submissions are closed. The jury is currently reviewing artworks.'
+                    : backendStatus === 'finalized'
+                    ? 'The exhibition selection has been finalized.'
+                    : 'This exhibition is closed for submissions.'
                   }
                 </p>
               </div>
