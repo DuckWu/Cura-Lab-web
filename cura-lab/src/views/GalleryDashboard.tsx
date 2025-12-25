@@ -567,10 +567,9 @@ interface SubmissionsTableProps {
 
 function SubmissionsTable({ 
   submissions, 
-  onAssignJurors,
-  onUpdateSubmission
+  onAssignJurors
 }: SubmissionsTableProps) {
-  const [updating, setUpdating] = useState<number | null>(null)
+  const [updating] = useState<number | null>(null)
 
   if (submissions.length === 0) {
     return (
