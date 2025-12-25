@@ -1,5 +1,6 @@
 // src/views/GalleryDashboard.tsx
 import { useState, useEffect } from 'react'
+import CreateGallery from './CreateGallery'
 import {
   Plus,
   Building,
@@ -56,7 +57,7 @@ export default function GalleryDashboard({
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+  const [isCreatingGallery, setIsCreatingGallery] = useState(false)
   const [activeTab, setActiveTab] = useState<'exhibitions' | 'submissions'>('exhibitions')
   const [filterExhibitionId, setFilterExhibitionId] = useState<string | 'all'>('all')
 
@@ -189,7 +190,15 @@ export default function GalleryDashboard({
       </div>
     )
   }
-
+  if (!myGallery && isCreatingGallery) {
+    return (
+      <CreateGallery
+        currentUser={currentUser}
+        onBack={() => setIsCreatingGallery(false)}
+        onSuccess={() => window.location.reload()} // 创建成功后刷新页面，加载新数据
+      />
+    )
+  }
   if (!myGallery) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
@@ -202,7 +211,7 @@ export default function GalleryDashboard({
             You need to create a gallery profile before managing exhibitions.
           </p>
           <button 
-            onClick={() => window.location.href = `${PAYLOAD_URL}/admin/collections/galleries/create`}
+            onClick={() => setIsCreatingGallery(true)}
             className="px-6 py-3 bg-neutral-900 text-white font-semibold rounded-full hover:bg-neutral-800 transition-all"
           >
             Create Gallery
