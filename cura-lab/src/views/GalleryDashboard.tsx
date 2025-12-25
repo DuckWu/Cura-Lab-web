@@ -1,6 +1,9 @@
 // src/views/GalleryDashboard.tsx
 import { useState, useEffect } from 'react'
 import CreateGallery from './CreateGallery'
+import { PDFDownloadLink } from '@react-pdf/renderer'
+import ExhibitionTagsPDF from './ExhibitionTagsPDF'
+import { Printer } from 'lucide-react'
 import {
   Plus,
   Building,
@@ -66,7 +69,13 @@ export default function GalleryDashboard({
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showBatchAssignModal, setShowBatchAssignModal] = useState(false)
-  
+  const submissionsForPDF = filterExhibitionId === 'all' 
+    ? [] // 如果选了 All，通常不让打印，或者你也可以允许打印全部
+    : submissions.filter(s => 
+        String((s.exhibition as any).id || s.exhibition) === filterExhibitionId && 
+        s.juryStatus === 'accepted' // 🟢 只打印被选中的
+      )
+  const currentExhibitionTitle = exhibitions.find(e => String(e.id) === filterExhibitionId)?.title || 'Exhibition'
   const [stats, setStats] = useState({
     totalExhibitions: 0,
     activeExhibitions: 0,
@@ -329,13 +338,35 @@ export default function GalleryDashboard({
                 </div>
 
                 {filterExhibitionId !== 'all' && (
-                  <button
-                    onClick={() => setShowBatchAssignModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-bold rounded-lg hover:bg-neutral-800 transition-colors shadow-md"
-                  >
-                    <Users className="w-4 h-4" />
-                    Assign All to Jurors
-                  </button>
+                  <div className="flex gap-3">
+                    {/* 1. PDF 打印按钮 */}
+                    {filterExhibitionId !== 'all' && submissionsForPDF.length > 0 && (
+                      <PDFDownloadLink
+                        document={<ExhibitionTagsPDF submissions={submissionsForPDF} galleryName={myGallery?.name} />}
+                        fileName={`${currentExhibitionTitle.replace(/\s+/g, '_')}_Tags.pdf`}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 text-neutral-700 text-sm font-bold rounded-lg hover:bg-neutral-50 transition-colors shadow-sm"
+                      >
+                        {/* @ts-ignore - react-pdf 的类型定义有时会报错，忽略即可 */}
+                        {({ loading }) => (
+                          <>
+                            <Printer className="w-4 h-4" />
+                            {loading ? 'Generating...' : 'Print Tags'}
+                          </>
+                        )}
+                      </PDFDownloadLink>
+                    )}
+
+                    {/* 2. 原有的 Assign 按钮 */}
+                    {filterExhibitionId !== 'all' && (
+                      <button
+                        onClick={() => setShowBatchAssignModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-bold rounded-lg hover:bg-neutral-800 transition-colors shadow-md"
+                      >
+                        <Users className="w-4 h-4" />
+                        Assign All to Jurors
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
 
