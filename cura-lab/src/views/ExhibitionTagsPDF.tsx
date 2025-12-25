@@ -1,5 +1,5 @@
 // src/views/ExhibitionTagsPDF.tsx
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import type { Submission, Artwork, User } from '../../../payload-project/src/payload-types'
 
 // 注册字体 (可选：为了更好看的英文衬线体，或者你可以注册中文字体)
