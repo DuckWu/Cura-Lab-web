@@ -41,7 +41,6 @@ type ArtistDashboardProps = {
 
 export default function ArtistDashboard({
   currentUser,
-  onNewSubmission,
   onViewExhibition,
   onViewArtwork,
   onBrowseExhibitions,

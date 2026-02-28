@@ -1087,7 +1087,7 @@ interface BatchGalleryButtonsProps {
   onDone: () => void
 }
 
-function BatchGalleryButtons({ exhibitionId, submissions, onDone }: BatchGalleryButtonsProps) {
+function BatchGalleryButtons({ submissions, onDone }: BatchGalleryButtonsProps) {
   const [processing, setProcessing] = useState(false)
   const [action, setAction] = useState<string | null>(null)
 

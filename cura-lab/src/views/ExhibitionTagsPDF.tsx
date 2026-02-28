@@ -1,5 +1,5 @@
 // src/views/ExhibitionTagsPDF.tsx
-import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet} from '@react-pdf/renderer'
 import type { Submission, Artwork, User } from '../../../payload-project/src/payload-types'
 
 // ─── 字体风格预设 ───────────────────────────────────────────
@@ -134,20 +134,7 @@ const baseStyles = StyleSheet.create({
   },
 })
 
-// ─── 分隔符组件 ──────────────────────────────────────────
-function Divider({ style }: { style: 'line' | 'dot' | 'none' }) {
-  if (style === 'line') return <View style={baseStyles.dividerLine} />
-  if (style === 'dot') {
-    return (
-      <View style={baseStyles.dividerDot}>
-        <View style={baseStyles.dot} />
-        <View style={baseStyles.dot} />
-        <View style={baseStyles.dot} />
-      </View>
-    )
-  }
-  return <View style={{ marginVertical: 4 }} />
-}
+
 
 // ─── 单个标签卡片 ─────────────────────────────────────────
 function TagCard({

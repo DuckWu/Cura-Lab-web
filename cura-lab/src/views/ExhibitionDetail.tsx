@@ -15,8 +15,7 @@ import {
   AlertCircle,
   CheckCircle,
   ExternalLink,
-  Upload,
-  Image as ImageIcon
+  Upload
 } from 'lucide-react'
 import SubmitArtworkModal from './SubmitArtworkModal'
 import type { Exhibition, Media, Gallery, User } from '../../../payload-project/src/payload-types'
