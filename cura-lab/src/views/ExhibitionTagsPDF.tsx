@@ -1,125 +1,327 @@
 // src/views/ExhibitionTagsPDF.tsx
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer'
 import type { Submission, Artwork, User } from '../../../payload-project/src/payload-types'
 
-// 注册字体 (可选：为了更好看的英文衬线体，或者你可以注册中文字体)
-// 这里暂时使用默认字体，如果需要中文支持需要单独加载 .ttf 字体文件
-// Font.register({ family: 'NotoSansSC', src: '/fonts/NotoSansSC-Regular.ttf' });
+// ─── 字体风格预设 ───────────────────────────────────────────
+// 如果需要中文支持，注册 Noto Sans SC 等字体：
+// Font.register({ family: 'NotoSansSC', src: '/fonts/NotoSansSC-Regular.ttf' })
+// Font.register({ family: 'NotoSansSC-Bold', src: '/fonts/NotoSansSC-Bold.ttf' })
 
-const styles = StyleSheet.create({
+export const TAG_STYLE_LABELS: Record<TagStyle, string> = {
+  classic: 'Classic',
+  modern: 'Modern',
+  minimal: 'Minimal',
+  editorial: 'Editorial',
+}
+
+export type TagStyle = 'classic' | 'modern' | 'minimal' | 'editorial'
+
+const tagStyleConfigs: Record<TagStyle, {
+  titleFont: string
+  titleSize: number
+  titleTransform?: 'uppercase' | 'none'
+  titleLetterSpacing?: number
+  bodyFont: string
+  bodySize: number
+  artistFont: string
+  artistSize: number
+  priceFont: string
+  footerFont: string
+  accentColor: string
+  dividerStyle?: 'line' | 'dot' | 'none'
+}> = {
+  // 经典美术馆风格：衬线体，优雅
+  classic: {
+    titleFont: 'Times-Italic',
+    titleSize: 14,
+    titleTransform: 'none',
+    bodyFont: 'Times-Roman',
+    bodySize: 9,
+    artistFont: 'Times-Bold',
+    artistSize: 11,
+    priceFont: 'Times-Roman',
+    footerFont: 'Helvetica',
+    accentColor: '#333',
+    dividerStyle: 'line',
+  },
+  // 现代画廊风格：无衬线，干净
+  modern: {
+    titleFont: 'Helvetica-Bold',
+    titleSize: 13,
+    titleTransform: 'none',
+    bodyFont: 'Helvetica',
+    bodySize: 9,
+    artistFont: 'Helvetica',
+    artistSize: 10,
+    priceFont: 'Helvetica-Bold',
+    footerFont: 'Helvetica',
+    accentColor: '#000',
+    dividerStyle: 'none',
+  },
+  // 极简风格：大量留白，小字
+  minimal: {
+    titleFont: 'Helvetica',
+    titleSize: 11,
+    titleTransform: 'uppercase',
+    titleLetterSpacing: 1.5,
+    bodyFont: 'Helvetica',
+    bodySize: 8,
+    artistFont: 'Helvetica',
+    artistSize: 8,
+    priceFont: 'Helvetica',
+    footerFont: 'Helvetica',
+    accentColor: '#666',
+    dividerStyle: 'none',
+  },
+  // 编辑/杂志风格：大标题，戏剧感
+  editorial: {
+    titleFont: 'Times-BoldItalic',
+    titleSize: 18,
+    titleTransform: 'none',
+    bodyFont: 'Helvetica',
+    bodySize: 8,
+    artistFont: 'Helvetica-Bold',
+    artistSize: 10,
+    priceFont: 'Helvetica',
+    footerFont: 'Courier',
+    accentColor: '#000',
+    dividerStyle: 'dot',
+  },
+}
+
+// ─── 基础样式 ─────────────────────────────────────────────
+const baseStyles = StyleSheet.create({
   page: {
-    padding: 30,
+    padding: 24,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignContent: 'flex-start', // 确保从顶部开始排列
+    alignContent: 'flex-start',
+    backgroundColor: '#fff',
   },
-  // 每个标签卡片 (8个一页 -> 宽度50%，高度25%)
   labelCard: {
     width: '50%',
-    height: '25%', // A4 高度大约可以放4排
-    padding: 15,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#e5e5e5', // 浅灰色虚线方便裁剪
+    height: '25%',
+    padding: 20,
+    borderBottomWidth: 0.5,
+    borderRightWidth: 0.5,
+    borderColor: '#d0d0d0',
     borderStyle: 'dashed',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    position: 'relative',
   },
-  // 最后一列不需要右边框 (可选优化)
   noRightBorder: {
     borderRightWidth: 0,
   },
-  // 艺术家名字 (大且加粗)
-  artistName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    fontFamily: 'Helvetica-Bold', // 使用内置加粗字体
+  dividerLine: {
+    height: 0.5,
+    backgroundColor: '#ccc',
+    marginVertical: 6,
+    width: 40,
   },
-  // 作品信息块
-  artworkInfo: {
-    marginTop: 4,
+  dividerDot: {
+    marginVertical: 6,
+    flexDirection: 'row',
+    gap: 4,
   },
-  // 作品标题 (斜体)
-  title: {
-    fontSize: 12,
-    fontFamily: 'Helvetica-Oblique', // 使用内置斜体
-    marginBottom: 2,
+  dot: {
+    width: 2,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: '#999',
   },
-  // 材质和年份
-  details: {
-    fontSize: 10,
-    color: '#444',
-    marginBottom: 2,
+  spacer: {
+    flex: 1,
   },
-  // 价格
-  price: {
-    marginTop: 8,
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  // 展签底部的画廊名字 (小字)
-  footer: {
-    position: 'absolute',
-    bottom: 10,
-    left: 15,
-    fontSize: 8,
-    color: '#999',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-  }
 })
 
-type Props = {
-  submissions: Submission[]
-  galleryName?: string
+// ─── 分隔符组件 ──────────────────────────────────────────
+function Divider({ style }: { style: 'line' | 'dot' | 'none' }) {
+  if (style === 'line') return <View style={baseStyles.dividerLine} />
+  if (style === 'dot') {
+    return (
+      <View style={baseStyles.dividerDot}>
+        <View style={baseStyles.dot} />
+        <View style={baseStyles.dot} />
+        <View style={baseStyles.dot} />
+      </View>
+    )
+  }
+  return <View style={{ marginVertical: 4 }} />
 }
 
-export default function ExhibitionTagsPDF({ submissions, galleryName }: Props) {
-  // 只渲染状态为 accepted 的作品
-  const acceptedSubmissions = submissions.filter(s => s.juryStatus === 'accepted')
+// ─── 单个标签卡片 ─────────────────────────────────────────
+function TagCard({
+  submission,
+  config,
+  galleryName,
+  isEvenColumn,
+}: {
+  submission: Submission
+  config: typeof tagStyleConfigs[TagStyle]
+  galleryName: string
+  isEvenColumn: boolean
+}) {
+  const artwork = (typeof submission.artwork === 'object' ? submission.artwork : {}) as Artwork
+  const artist = (typeof submission.artist === 'object' ? submission.artist : {}) as User
+
+  // 优先使用 displayArtists，否则 fallback 到 artist.name / email
+  const displayArtists = (submission as any).displayArtists as string[] | undefined
+  const artistDisplay = displayArtists && displayArtists.length > 0
+    ? displayArtists.join(', ')
+    : artist.name || (artist as any).email || 'Unknown Artist'
+
+  const formatDimensions = () => {
+    const d = artwork.dimensions
+    if (!d) return ''
+    const parts = [d.height, d.width, d.depth].filter(Boolean).join(' × ')
+    return `${parts} ${d.unit || ''}`
+  }
+
+  return (
+    <View style={[baseStyles.labelCard, isEvenColumn ? baseStyles.noRightBorder : {}]}>
+      {/* 弹性空间，把内容垂直居中 */}
+      <View style={baseStyles.spacer} />
+
+      {/* ① 艺术家名（最上方，加粗） */}
+      <Text
+        style={{
+          fontFamily: config.artistFont,
+          fontSize: config.artistSize,
+          color: '#222',
+          marginBottom: 4,
+          textAlign: 'center',
+        }}
+      >
+        {artistDisplay}
+      </Text>
+
+      {/* ② 作品名（斜体）+ 年份 同一行 */}
+      <Text style={{ textAlign: 'center', marginBottom: 3 }}>
+        <Text
+          style={{
+            fontFamily: config.titleFont,
+            fontSize: config.titleSize,
+            color: config.accentColor,
+          }}
+        >
+          {artwork.title || 'Untitled'}
+        </Text>
+        {artwork.year && (
+          <Text
+            style={{
+              fontFamily: config.bodyFont,
+              fontSize: config.bodySize,
+              color: '#555',
+            }}
+          >
+            , {artwork.year}
+          </Text>
+        )}
+      </Text>
+
+      {/* ③ 材质 */}
+      {artwork.medium && (
+        <Text
+          style={{
+            fontFamily: config.bodyFont,
+            fontSize: config.bodySize,
+            color: '#555',
+            textAlign: 'center',
+            marginBottom: 1,
+          }}
+        >
+          {artwork.medium}
+        </Text>
+      )}
+
+      {/* ④ 尺寸 */}
+      {artwork.dimensions && (
+        <Text
+          style={{
+            fontFamily: config.bodyFont,
+            fontSize: config.bodySize,
+            color: '#555',
+            textAlign: 'center',
+            marginBottom: 1,
+          }}
+        >
+          {formatDimensions()}
+        </Text>
+      )}
+
+      {/* ⑤ 价格 */}
+      {artwork.price && (
+        <Text
+          style={{
+            fontFamily: config.priceFont,
+            fontSize: config.bodySize + 1,
+            color: config.accentColor,
+            textAlign: 'center',
+            marginTop: 4,
+          }}
+        >
+          ${artwork.price.toLocaleString()}
+        </Text>
+      )}
+
+      {/* 弹性空间 */}
+      <View style={baseStyles.spacer} />
+
+      {/* ⑥ 画廊名 */}
+      <Text
+        style={{
+          fontFamily: config.footerFont,
+          fontSize: 7,
+          color: '#aaa',
+          textTransform: 'uppercase',
+          letterSpacing: 2,
+          textAlign: 'center',
+        }}
+      >
+        {galleryName}
+      </Text>
+    </View>
+  )
+}
+
+// ─── 主组件 ───────────────────────────────────────────────
+interface Props {
+  submissions: Submission[]
+  galleryName?: string
+  tagStyle?: TagStyle
+  [key: string]: any // 允许 react-pdf 传入额外 props
+}
+
+export default function ExhibitionTagsPDF({
+  submissions,
+  galleryName = 'CURA LAB',
+  tagStyle = 'classic',
+}: Props) {
+  const config = tagStyleConfigs[tagStyle]
+  const accepted = submissions.filter((s) => s.juryStatus === 'accepted')
+
+  // 每页8个标签 (2列 × 4行)
+  const perPage = 8
+  const pages: Submission[][] = []
+  for (let i = 0; i < accepted.length; i += perPage) {
+    pages.push(accepted.slice(i, i + perPage))
+  }
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
-        {acceptedSubmissions.map((sub, index) => {
-          const artwork = sub.artwork as Artwork
-          const artist = sub.artist as User
-          
-          // 判断是否是偶数列（用于去掉右边框，美观考虑）
-          const isEvenColumn = (index + 1) % 2 === 0
-
-          return (
-            <View key={sub.id} style={[styles.labelCard, isEvenColumn ? { borderRightWidth: 0 } : {}]}>
-              {/* Artist Name */}
-              <Text style={styles.artistName}>
-                {artist.name || 'Unknown Artist'}
-              </Text>
-
-              {/* Artwork Details */}
-              <View style={styles.artworkInfo}>
-                <Text>
-                  <Text style={styles.title}>{artwork.title || 'Untitled'}</Text>
-                  <Text style={styles.details}>, {artwork.year}</Text>
-                </Text>
-                
-                <Text style={styles.details}>{artwork.medium}</Text>
-                
-                <Text style={styles.details}>
-                  {artwork.dimensions?.height} x {artwork.dimensions?.width} {artwork.dimensions?.depth ? `x ${artwork.dimensions.depth}` : ''} {artwork.dimensions?.unit}
-                </Text>
-
-                {artwork.price && (
-                  <Text style={styles.price}>${artwork.price.toLocaleString()}</Text>
-                )}
-              </View>
-
-              {/* Gallery Branding */}
-              <Text style={styles.footer}>{galleryName || 'CURA LAB'}</Text>
-            </View>
-          )
-        })}
-      </Page>
+      {pages.map((pageSubmissions, pageIndex) => (
+        <Page key={pageIndex} size="A4" style={baseStyles.page}>
+          {pageSubmissions.map((sub, index) => (
+            <TagCard
+              key={sub.id}
+              submission={sub}
+              config={config}
+              galleryName={galleryName}
+              isEvenColumn={(index + 1) % 2 === 0}
+            />
+          ))}
+        </Page>
+      ))}
     </Document>
   )
 }

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import CreateGallery from './CreateGallery'
 import { PDFDownloadLink } from '@react-pdf/renderer'
-import ExhibitionTagsPDF from './ExhibitionTagsPDF'
+import ExhibitionTagsPDF, { type TagStyle, TAG_STYLE_LABELS } from './ExhibitionTagsPDF'
 import { Printer } from 'lucide-react'
 import {
   Plus,
@@ -21,7 +21,8 @@ import {
   Send,
   Check,
   ListFilter,
-  Briefcase
+  Briefcase,
+  X
 } from 'lucide-react'
 import type { User, Gallery, Exhibition, Submission, Media } from '../../../payload-project/src/payload-types'
 
@@ -69,13 +70,19 @@ export default function GalleryDashboard({
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null)
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [showBatchAssignModal, setShowBatchAssignModal] = useState(false)
-  const submissionsForPDF = filterExhibitionId === 'all' 
-    ? [] // 如果选了 All，通常不让打印，或者你也可以允许打印全部
-    : submissions.filter(s => 
-        String((s.exhibition as any).id || s.exhibition) === filterExhibitionId && 
-        s.juryStatus === 'accepted' // 🟢 只打印被选中的
+
+  const [viewingSubmission, setViewingSubmission] = useState<Submission | null>(null)
+
+  // 🎨 Tag 风格选择
+  const [tagStyle, setTagStyle] = useState<TagStyle>('classic')
+
+  const submissionsForPDF = filterExhibitionId === 'all'
+    ? []
+    : submissions.filter(s =>
+        String((s.exhibition as any).id || s.exhibition) === filterExhibitionId
       )
   const currentExhibitionTitle = exhibitions.find(e => String(e.id) === filterExhibitionId)?.title || 'Exhibition'
+
   const [stats, setStats] = useState({
     totalExhibitions: 0,
     activeExhibitions: 0,
@@ -106,7 +113,7 @@ export default function GalleryDashboard({
           `${PAYLOAD_URL}/api/galleries?depth=1&where[owner][equals]=${currentUser.id}`,
           { credentials: 'include' }
         )
-        
+
         if (galleryResponse.ok) {
           const galleryData = await galleryResponse.json()
           if (galleryData.docs && galleryData.docs.length > 0) {
@@ -116,13 +123,13 @@ export default function GalleryDashboard({
               `${PAYLOAD_URL}/api/exhibitions?depth=2&where[gallery][equals]=${galleryData.docs[0].id}&sort=-createdAt`,
               { credentials: 'include' }
             )
-            
+
             if (exhibitionsResponse.ok) {
               const exhibitionsData = await exhibitionsResponse.json()
               if (Array.isArray(exhibitionsData.docs)) {
                 setExhibitions(exhibitionsData.docs)
-                
-                const active = exhibitionsData.docs.filter((e: Exhibition) => 
+
+                const active = exhibitionsData.docs.filter((e: Exhibition) =>
                   e.exhibitionStatus === 'open' || e.exhibitionStatus === 'jury_review'
                 ).length
 
@@ -134,7 +141,7 @@ export default function GalleryDashboard({
                 setStats({
                   totalExhibitions: exhibitionsData.docs.length,
                   activeExhibitions: active,
-                  totalSubmissions: exhibitionsData.docs.reduce((acc: number, e: Exhibition) => 
+                  totalSubmissions: exhibitionsData.docs.reduce((acc: number, e: Exhibition) =>
                     acc + (e.totalSubmissions || 0), 0
                   ),
                   totalRevenue,
@@ -146,7 +153,7 @@ export default function GalleryDashboard({
                     `${PAYLOAD_URL}/api/submissions?depth=3&where[exhibition][in]=${exhibitionIds}&sort=-createdAt`,
                     { credentials: 'include' }
                   )
-                  
+
                   if (submissionsResponse.ok) {
                     const submissionsData = await submissionsResponse.json()
                     if (Array.isArray(submissionsData.docs)) {
@@ -199,15 +206,17 @@ export default function GalleryDashboard({
       </div>
     )
   }
+
   if (!myGallery && isCreatingGallery) {
     return (
       <CreateGallery
         currentUser={currentUser}
         onBack={() => setIsCreatingGallery(false)}
-        onSuccess={() => window.location.reload()} // 创建成功后刷新页面，加载新数据
+        onSuccess={() => window.location.reload()}
       />
     )
   }
+
   if (!myGallery) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
@@ -219,7 +228,7 @@ export default function GalleryDashboard({
           <p className="text-gray-600 mb-6">
             You need to create a gallery profile before managing exhibitions.
           </p>
-          <button 
+          <button
             onClick={() => setIsCreatingGallery(true)}
             className="px-6 py-3 bg-neutral-900 text-white font-semibold rounded-full hover:bg-neutral-800 transition-all"
           >
@@ -236,13 +245,13 @@ export default function GalleryDashboard({
       <div className="hidden lg:flex w-64 bg-white border-r border-neutral-200 flex-col sticky top-0 h-screen z-20">
         <div className="p-8 font-black text-2xl tracking-tighter border-b">ADMIN PANEL</div>
         <nav className="flex-1 p-4 space-y-2 mt-4">
-          <button 
+          <button
             onClick={() => setActiveTab('exhibitions')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'exhibitions' ? 'bg-neutral-900 text-white shadow-lg' : 'text-gray-500 hover:bg-neutral-100'}`}
           >
             <Calendar className="w-5 h-5" /> Exhibitions
           </button>
-          <button 
+          <button
             onClick={() => { setActiveTab('submissions'); setFilterExhibitionId('all'); }}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'submissions' ? 'bg-neutral-900 text-white shadow-lg' : 'text-gray-500 hover:bg-neutral-100'}`}
           >
@@ -251,7 +260,7 @@ export default function GalleryDashboard({
 
           <div className="pt-6 mt-6 border-t border-neutral-100">
             <p className="px-4 text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tools</p>
-            <button 
+            <button
               onClick={onEnterJuryMode}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-purple-600 hover:bg-purple-50 transition-all"
             >
@@ -325,7 +334,7 @@ export default function GalleryDashboard({
                 <div className="flex items-center gap-3">
                   <ListFilter className="w-5 h-5 text-gray-400" />
                   <span className="text-sm font-bold text-neutral-400 uppercase tracking-widest">Viewing:</span>
-                  <select 
+                  <select
                     value={filterExhibitionId}
                     onChange={(e) => setFilterExhibitionId(e.target.value)}
                     className="bg-neutral-50 border-none text-sm font-bold rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-neutral-900"
@@ -338,42 +347,70 @@ export default function GalleryDashboard({
                 </div>
 
                 {filterExhibitionId !== 'all' && (
-                  <div className="flex gap-3">
-                    {/* 1. PDF 打印按钮 */}
-                    {filterExhibitionId !== 'all' && submissionsForPDF.length > 0 && (
-                      <PDFDownloadLink
-                        document={<ExhibitionTagsPDF submissions={submissionsForPDF} galleryName={myGallery?.name} />}
-                        fileName={`${currentExhibitionTitle.replace(/\s+/g, '_')}_Tags.pdf`}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 text-neutral-700 text-sm font-bold rounded-lg hover:bg-neutral-50 transition-colors shadow-sm"
-                      >
-                        {/* @ts-ignore - react-pdf 的类型定义有时会报错，忽略即可 */}
-                        {({ loading }) => (
-                          <>
-                            <Printer className="w-4 h-4" />
-                            {loading ? 'Generating...' : 'Print Tags'}
-                          </>
-                        )}
-                      </PDFDownloadLink>
+                  <div className="flex gap-3 items-center">
+                    {/* 🎨 Tag Style Selector + PDF Download */}
+                    {submissionsForPDF.length > 0 && (() => {
+                      const pdfDocument = (
+                        <ExhibitionTagsPDF
+                          submissions={submissionsForPDF}
+                          galleryName={myGallery?.name}
+                          tagStyle={tagStyle}
+                        />
+                      ) as any
+
+                      return (
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={tagStyle}
+                            onChange={(e) => setTagStyle(e.target.value as TagStyle)}
+                            className="bg-neutral-50 border border-neutral-300 text-sm font-medium rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-neutral-700"
+                          >
+                            {(Object.keys(TAG_STYLE_LABELS) as TagStyle[]).map((key) => (
+                              <option key={key} value={key}>{TAG_STYLE_LABELS[key]}</option>
+                            ))}
+                          </select>
+
+                          <PDFDownloadLink
+                            document={pdfDocument}
+                            fileName={`${currentExhibitionTitle.replace(/\s+/g, '_')}_Tags_${tagStyle}.pdf`}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 text-neutral-700 text-sm font-bold rounded-lg hover:bg-neutral-50 transition-colors shadow-sm"
+                          >
+                            {/* @ts-ignore */}
+                            {({ loading: pdfLoading }) => (
+                              <>
+                                <Printer className="w-4 h-4" />
+                                {pdfLoading ? 'Generating...' : 'Print Tags'}
+                              </>
+                            )}
+                          </PDFDownloadLink>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Batch Gallery Decision */}
+                    {filterExhibitionId !== 'all' && (
+                      <BatchGalleryButtons
+                        exhibitionId={filterExhibitionId}
+                        submissions={submissions.filter(s => String((s.exhibition as any).id || s.exhibition) === filterExhibitionId)}
+                        onDone={() => window.location.reload()}
+                      />
                     )}
 
-                    {/* 2. 原有的 Assign 按钮 */}
-                    {filterExhibitionId !== 'all' && (
-                      <button
-                        onClick={() => setShowBatchAssignModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-bold rounded-lg hover:bg-neutral-800 transition-colors shadow-md"
-                      >
-                        <Users className="w-4 h-4" />
-                        Assign All to Jurors
-                      </button>
-                    )}
+                    {/* Batch Assign Button */}
+                    <button
+                      onClick={() => setShowBatchAssignModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-neutral-900 text-white text-sm font-bold rounded-lg hover:bg-neutral-800 transition-colors shadow-md"
+                    >
+                      <Users className="w-4 h-4" />
+                      Assign All to Jurors
+                    </button>
                   </div>
                 )}
               </div>
 
-              {/* 🔧 Gallery Status Removed */}
               <SubmissionsTable
-                submissions={filterExhibitionId === 'all' 
-                  ? submissions 
+                submissions={filterExhibitionId === 'all'
+                  ? submissions
                   : submissions.filter(s => String((s.exhibition as any).id || s.exhibition) === filterExhibitionId)
                 }
                 onAssignJurors={(submission) => {
@@ -381,6 +418,7 @@ export default function GalleryDashboard({
                   setShowAssignModal(true)
                 }}
                 onUpdateSubmission={handleUpdateSubmission}
+                onViewSubmission={(submission) => setViewingSubmission(submission)}
               />
             </div>
           )}
@@ -435,6 +473,15 @@ export default function GalleryDashboard({
             setShowBatchAssignModal(false)
             window.location.reload()
           }}
+        />
+      )}
+
+      {viewingSubmission && (
+        <SubmissionDetailModal
+          submission={viewingSubmission}
+          onClose={() => setViewingSubmission(null)}
+          galleryName={myGallery?.name}
+          commissionRate={myGallery?.commissionRate || 0}
         />
       )}
     </div>
@@ -514,7 +561,6 @@ interface ExhibitionCardProps {
 }
 
 function ExhibitionCard({ exhibition, onEdit, onView, onManageJurors, onManageSubmissions }: ExhibitionCardProps) {
-  // 🔧 移除了 Selected Count / Capacity 逻辑
   return (
     <div className="group bg-white rounded-2xl overflow-hidden border border-neutral-200 hover:border-neutral-300 hover:shadow-xl transition-all flex flex-col h-full">
       <div className="aspect-[16/9] bg-gray-100 relative overflow-hidden shrink-0">
@@ -529,7 +575,7 @@ function ExhibitionCard({ exhibition, onEdit, onView, onManageJurors, onManageSu
             <ImageIcon className="w-12 h-12 text-gray-300" />
           </div>
         )}
-        
+
         <div className="absolute top-3 left-3">
           <span className={`px-3 py-1 rounded-full text-xs font-bold ${
             exhibition.exhibitionStatus === 'open'
@@ -549,11 +595,11 @@ function ExhibitionCard({ exhibition, onEdit, onView, onManageJurors, onManageSu
           </div>
         </div>
       </div>
-      
+
       <div className="p-6 flex flex-col flex-1">
         <h3 className="text-lg font-bold text-neutral-900 mb-2 line-clamp-1">{exhibition.title}</h3>
         <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">{exhibition.description}</p>
-        
+
         <div className="flex items-center justify-between text-sm text-gray-500 mb-4 pb-4 border-b border-neutral-200">
           <div className="flex items-center gap-1">
             <FileText className="w-4 h-4" />
@@ -564,7 +610,7 @@ function ExhibitionCard({ exhibition, onEdit, onView, onManageJurors, onManageSu
             <span>${exhibition.totalRevenue || 0}</span>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => onView && onView(exhibition.id)}
@@ -599,17 +645,555 @@ function ExhibitionCard({ exhibition, onEdit, onView, onManageJurors, onManageSu
   )
 }
 
+// --- Submission Detail Modal ---
+
+interface SubmissionDetailModalProps {
+  submission: Submission
+  onClose: () => void
+  galleryName?: string
+  commissionRate?: number
+}
+
+function SubmissionDetailModal({ submission, onClose, galleryName, commissionRate = 0 }: SubmissionDetailModalProps) {
+  const artwork = typeof submission.artwork === 'object' ? submission.artwork : null
+  const artist = typeof submission.artist === 'object' ? submission.artist : null
+  const exhibitionData = typeof submission.exhibition === 'object' ? submission.exhibition : null
+
+  const displayArtists = (submission as any).displayArtists as string[] | undefined
+  const artistName = displayArtists && displayArtists.length > 0
+    ? displayArtists.join(', ')
+    : artist?.name || artist?.email || 'Unknown Artist'
+
+  const dimensionsDisplay = artwork?.dimensionsDisplay ||
+    (artwork?.dimensions
+      ? `${artwork.dimensions.width} × ${artwork.dimensions.height}${artwork.dimensions.depth ? ` × ${artwork.dimensions.depth}` : ''} ${artwork.dimensions.unit}`
+      : null)
+
+  // Sale management state
+  const [saleStatus, setSaleStatus] = useState(artwork?.sale_status || 'not_for_sale')
+  const [soldPrice, setSoldPrice] = useState<string>(String(artwork?.sold_price || artwork?.price || ''))
+  const [paymentMethod, setPaymentMethod] = useState<string>((artwork as any)?.payment_method || '')
+  const [buyerName, setBuyerName] = useState<string>((artwork as any)?.buyer_name || '')
+  const [buyerContact, setBuyerContact] = useState<string>((artwork as any)?.buyer_contact || '')
+  const [saleNotes, setSaleNotes] = useState<string>((artwork as any)?.sale_notes || '')
+  const [saving, setSaving] = useState(false)
+  const [showInvoice, setShowInvoice] = useState(false)
+
+  const calculatedCommission = soldPrice ? (parseFloat(soldPrice) * commissionRate / 100) : 0
+  const artistPayout = soldPrice ? parseFloat(soldPrice) - calculatedCommission : 0
+
+  const handleSaveSale = async () => {
+    if (!artwork) return
+    setSaving(true)
+    try {
+      const updateData: any = {
+        sale_status: saleStatus,
+      }
+
+      if (saleStatus === 'sold') {
+        updateData.sold_price = parseFloat(soldPrice) || 0
+        updateData.sold_date = new Date().toISOString()
+        updateData.payment_method = paymentMethod
+        updateData.buyer_name = buyerName
+        updateData.buyer_contact = buyerContact
+        updateData.commission_amount = calculatedCommission
+        updateData.sale_notes = saleNotes
+      } else if (saleStatus === 'pending') {
+        updateData.buyer_name = buyerName
+        updateData.buyer_contact = buyerContact
+        updateData.sale_notes = saleNotes
+      } else if (saleStatus === 'for_sale') {
+        updateData.price = parseFloat(soldPrice) || artwork.price || 0
+      }
+
+      const res = await fetch(`${PAYLOAD_URL}/api/artworks/${artwork.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(updateData),
+      })
+
+      if (!res.ok) throw new Error('Failed to update sale status')
+      alert('Sale status updated!')
+
+      if (saleStatus === 'sold') {
+        setShowInvoice(true)
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to update')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Invoice view
+  if (showInvoice) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowInvoice(false)}>
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+          {/* Invoice Header */}
+          <div className="flex items-center justify-between p-4 border-b border-neutral-200 no-print">
+            <h2 className="text-lg font-bold text-neutral-900">Invoice</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-neutral-900 text-white text-sm font-bold rounded-lg hover:bg-neutral-800 transition-colors"
+              >
+                Print
+              </button>
+              <button onClick={() => setShowInvoice(false)} className="p-2 hover:bg-neutral-100 rounded-full">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Invoice Content */}
+          <div className="p-10" id="invoice-content">
+            {/* Gallery Header */}
+            <div className="text-center mb-10">
+              <h1 className="text-2xl font-black tracking-tighter uppercase">{galleryName || 'Gallery'}</h1>
+              <p className="text-sm text-neutral-500 mt-1">SALES INVOICE</p>
+            </div>
+
+            {/* Invoice Meta */}
+            <div className="flex justify-between text-sm text-neutral-600 mb-8 pb-6 border-b border-neutral-200">
+              <div>
+                <div className="font-bold text-neutral-900 mb-1">Invoice Date</div>
+                <div>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+              </div>
+              <div className="text-right">
+                <div className="font-bold text-neutral-900 mb-1">Exhibition</div>
+                <div>{exhibitionData?.title || 'N/A'}</div>
+              </div>
+            </div>
+
+            {/* Buyer Info */}
+            <div className="mb-8 pb-6 border-b border-neutral-200">
+              <div className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-2">Sold To</div>
+              <div className="text-neutral-900 font-semibold">{buyerName || 'N/A'}</div>
+              {buyerContact && <div className="text-sm text-neutral-600">{buyerContact}</div>}
+            </div>
+
+            {/* Artwork Details */}
+            <div className="mb-8">
+              <div className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4">Artwork</div>
+              <div className="flex gap-6">
+                <div className="w-24 h-24 bg-neutral-100 rounded-lg overflow-hidden flex-shrink-0">
+                  {artwork && isMedia((artwork as any).image) && (
+                    <img src={`${PAYLOAD_URL}${(artwork as any).image.url}`} alt={artwork.title} className="w-full h-full object-cover" />
+                  )}
+                </div>
+                <div>
+                  <div className="font-bold text-neutral-900 text-lg">{artwork?.title || 'Untitled'}</div>
+                  <div className="text-sm text-neutral-600">{artistName}</div>
+                  {artwork?.medium && <div className="text-sm text-neutral-500 mt-1">{artwork.medium}</div>}
+                  {artwork?.year && <div className="text-sm text-neutral-500">{artwork.year}</div>}
+                  {dimensionsDisplay && <div className="text-sm text-neutral-500">{dimensionsDisplay}</div>}
+                </div>
+              </div>
+            </div>
+
+            {/* Price Breakdown */}
+            <div className="bg-neutral-50 rounded-xl p-6 mb-8">
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-neutral-600">Sale Price</span>
+                  <span className="font-bold text-neutral-900">${parseFloat(soldPrice || '0').toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-neutral-600">Gallery Commission ({commissionRate}%)</span>
+                  <span className="text-neutral-700">${calculatedCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="border-t border-neutral-200 pt-3 flex justify-between">
+                  <span className="font-bold text-neutral-900">Artist Payout</span>
+                  <span className="font-bold text-neutral-900 text-lg">${artistPayout.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Method */}
+            <div className="flex justify-between text-sm text-neutral-600 mb-4">
+              <span>Payment Method</span>
+              <span className="font-medium text-neutral-900 capitalize">{paymentMethod || 'N/A'}</span>
+            </div>
+
+            {/* Notes */}
+            {saleNotes && (
+              <div className="mb-8">
+                <div className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-2">Notes</div>
+                <div className="text-sm text-neutral-600">{saleNotes}</div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="text-center text-xs text-neutral-400 mt-10 pt-6 border-t border-neutral-200">
+              Thank you for your purchase.
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+          <div>
+            <h2 className="text-xl font-bold text-neutral-900">{artwork?.title || 'Untitled'}</h2>
+            <p className="text-sm text-neutral-500 mt-0.5">{artistName}</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
+            <X className="w-5 h-5 text-neutral-600" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-0">
+            {/* Image - 2 cols */}
+            <div className="md:col-span-2 bg-neutral-100 aspect-square relative">
+              {artwork && isMedia((artwork as any).image) ? (
+                <img
+                  src={`${PAYLOAD_URL}${(artwork as any).image.url}`}
+                  alt={artwork.title}
+                  className="w-full h-full object-contain p-4"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <ImageIcon className="w-16 h-16 text-neutral-300" />
+                </div>
+              )}
+            </div>
+
+            {/* Details - 3 cols */}
+            <div className="md:col-span-3 p-6 space-y-4">
+              {/* Info Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                {exhibitionData && (
+                  <div>
+                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Exhibition</div>
+                    <div className="text-sm font-semibold text-neutral-900">{exhibitionData.title}</div>
+                  </div>
+                )}
+                {artwork?.medium && (
+                  <div>
+                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Medium</div>
+                    <div className="text-sm text-neutral-700">{artwork.medium}</div>
+                  </div>
+                )}
+                {artwork?.year && (
+                  <div>
+                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Year</div>
+                    <div className="text-sm text-neutral-700">{artwork.year}</div>
+                  </div>
+                )}
+                {dimensionsDisplay && (
+                  <div>
+                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Dimensions</div>
+                    <div className="text-sm text-neutral-700">{dimensionsDisplay}</div>
+                  </div>
+                )}
+                {artwork?.price && (
+                  <div>
+                    <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Listed Price</div>
+                    <div className="text-lg font-bold text-neutral-900">${artwork.price.toLocaleString()}</div>
+                  </div>
+                )}
+              </div>
+
+              {artwork?.description && (
+                <div>
+                  <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Description</div>
+                  <div className="text-sm text-neutral-600 leading-relaxed line-clamp-3">{artwork.description}</div>
+                </div>
+              )}
+
+              {/* Status badges */}
+              <div className="flex flex-wrap gap-2">
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                  submission.juryStatus === 'accepted' ? 'bg-green-50 text-green-700' :
+                  submission.juryStatus === 'rejected' ? 'bg-red-50 text-red-700' :
+                  'bg-yellow-50 text-yellow-700'
+                }`}>
+                  Jury: {submission.juryStatus?.toUpperCase()}
+                </span>
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                  submission.galleryStatus === 'selected' ? 'bg-green-50 text-green-700' :
+                  submission.galleryStatus === 'not_selected' ? 'bg-red-50 text-red-700' :
+                  'bg-yellow-50 text-yellow-700'
+                }`}>
+                  Gallery: {submission.galleryStatus?.toUpperCase()}
+                </span>
+              </div>
+
+              {/* ─── Sale Management ─── */}
+              <div className="pt-4 border-t border-neutral-200">
+                <h3 className="text-xs font-black text-neutral-400 uppercase tracking-widest mb-4">Sale Management</h3>
+
+                <div className="space-y-3">
+                  {/* Sale Status */}
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-700 mb-1">Status</label>
+                    <select
+                      value={saleStatus}
+                      onChange={(e) => setSaleStatus(e.target.value as typeof saleStatus)}
+                      className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="not_for_sale">Not for Sale</option>
+                      <option value="for_sale">For Sale</option>
+                      <option value="pending">Sale Pending</option>
+                      <option value="sold">Sold</option>
+                    </select>
+                  </div>
+
+                  {/* Conditional fields based on status */}
+                  {(saleStatus === 'sold' || saleStatus === 'pending' || saleStatus === 'for_sale') && (
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-700 mb-1">
+                        {saleStatus === 'sold' ? 'Sale Price ($)' : 'Asking Price ($)'}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={soldPrice}
+                        onChange={(e) => setSoldPrice(e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  )}
+
+                  {(saleStatus === 'sold' || saleStatus === 'pending') && (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-neutral-700 mb-1">Buyer Name</label>
+                          <input
+                            type="text"
+                            value={buyerName}
+                            onChange={(e) => setBuyerName(e.target.value)}
+                            placeholder="John Doe"
+                            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-neutral-700 mb-1">Buyer Contact</label>
+                          <input
+                            type="text"
+                            value={buyerContact}
+                            onChange={(e) => setBuyerContact(e.target.value)}
+                            placeholder="email or phone"
+                            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {saleStatus === 'sold' && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-medium text-neutral-700 mb-1">Payment Method</label>
+                        <select
+                          value={paymentMethod}
+                          onChange={(e) => setPaymentMethod(e.target.value)}
+                          className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Select...</option>
+                          <option value="cash">Cash</option>
+                          <option value="card">Credit Card</option>
+                          <option value="app">App Payment</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+
+                      {/* Commission Preview */}
+                      {soldPrice && (
+                        <div className="bg-neutral-50 rounded-lg p-3 space-y-1.5">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-neutral-500">Sale Price</span>
+                            <span className="font-bold">${parseFloat(soldPrice).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-neutral-500">Commission ({commissionRate}%)</span>
+                            <span className="text-neutral-700">${calculatedCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="border-t border-neutral-200 pt-1.5 flex justify-between text-xs">
+                            <span className="font-bold text-neutral-900">Artist Payout</span>
+                            <span className="font-bold text-green-700">${artistPayout.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {(saleStatus === 'sold' || saleStatus === 'pending') && (
+                    <div>
+                      <label className="block text-xs font-medium text-neutral-700 mb-1">Notes</label>
+                      <textarea
+                        value={saleNotes}
+                        onChange={(e) => setSaleNotes(e.target.value)}
+                        rows={2}
+                        placeholder="Additional notes..."
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      />
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={handleSaveSale}
+                      disabled={saving}
+                      className="flex-1 px-4 py-2.5 bg-neutral-900 text-white text-sm font-bold rounded-lg hover:bg-neutral-800 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                      {saving ? 'Saving...' : 'Save'}
+                    </button>
+
+                    {(saleStatus === 'sold' || (artwork?.sale_status === 'sold')) && (
+                      <button
+                        onClick={() => setShowInvoice(true)}
+                        className="px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Invoice
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface SubmissionsTableProps {
   submissions: Submission[]
   onAssignJurors?: (submission: Submission) => void
   onUpdateSubmission?: (updated: Submission) => void
+  onViewSubmission?: (submission: Submission) => void
 }
 
-function SubmissionsTable({ 
-  submissions, 
-  onAssignJurors
+// --- Batch Gallery Decision Buttons ---
+
+interface BatchGalleryButtonsProps {
+  exhibitionId: string
+  submissions: Submission[]
+  onDone: () => void
+}
+
+function BatchGalleryButtons({ exhibitionId, submissions, onDone }: BatchGalleryButtonsProps) {
+  const [processing, setProcessing] = useState(false)
+  const [action, setAction] = useState<string | null>(null)
+
+  const handleBatch = async (decision: 'selected' | 'not_selected') => {
+    const label = decision === 'selected' ? 'accept' : 'reject'
+    const target = decision === 'selected' ? 'all jury-accepted' : 'all jury-rejected'
+    const confirmed = window.confirm(`Are you sure you want to ${label} ${target} submissions?`)
+    if (!confirmed) return
+
+    setProcessing(true)
+    setAction(decision)
+
+    try {
+      // Filter based on decision type
+      const targetSubmissions = decision === 'selected'
+        ? submissions.filter(s => s.juryStatus === 'accepted' && s.galleryStatus === 'pending')
+        : submissions.filter(s => s.juryStatus === 'rejected' && s.galleryStatus === 'pending')
+
+      if (targetSubmissions.length === 0) {
+        alert(`No pending ${decision === 'selected' ? 'jury-accepted' : 'jury-rejected'} submissions to update.`)
+        return
+      }
+
+      await Promise.all(
+        targetSubmissions.map(sub =>
+          fetch(`${PAYLOAD_URL}/api/submissions/${sub.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ galleryStatus: decision }),
+          })
+        )
+      )
+
+      alert(`Successfully updated ${targetSubmissions.length} submissions!`)
+      onDone()
+    } catch (err: any) {
+      alert('Batch update failed: ' + err.message)
+    } finally {
+      setProcessing(false)
+      setAction(null)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mr-1">Gallery:</span>
+      <button
+        onClick={() => handleBatch('selected')}
+        disabled={processing}
+        className="flex items-center gap-1.5 px-3 py-2 bg-green-50 border border-green-200 text-green-700 text-xs font-bold rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50"
+      >
+        {processing && action === 'selected' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+        Accept Jury ✓
+      </button>
+      <button
+        onClick={() => handleBatch('not_selected')}
+        disabled={processing}
+        className="flex items-center gap-1.5 px-3 py-2 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+      >
+        {processing && action === 'not_selected' ? <Loader2 className="w-3 h-3 animate-spin" /> : <AlertCircle className="w-3 h-3" />}
+        Reject Jury ✗
+      </button>
+    </div>
+  )
+}
+
+function SubmissionsTable({
+  submissions,
+  onAssignJurors,
+  onUpdateSubmission,
+  onViewSubmission
 }: SubmissionsTableProps) {
-  const [updating] = useState<number | null>(null)
+  const [updating, setUpdating] = useState<number | null>(null)
+
+  const handleGalleryDecision = async (submission: Submission, decision: 'selected' | 'not_selected') => {
+    setUpdating(submission.id)
+    try {
+      // Extract IDs to avoid sending full objects
+      const artistId = typeof submission.artist === 'object' ? (submission.artist as any).id : submission.artist
+      const exhibitionId = typeof submission.exhibition === 'object' ? (submission.exhibition as any).id : submission.exhibition
+      const artworkId = typeof submission.artwork === 'object' ? (submission.artwork as any).id : submission.artwork
+
+      const res = await fetch(`${PAYLOAD_URL}/api/submissions/${submission.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          galleryStatus: decision,
+          artist: artistId,
+          exhibition: exhibitionId,
+          artwork: artworkId,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to update')
+      const refreshRes = await fetch(`${PAYLOAD_URL}/api/submissions/${submission.id}?depth=3`, { credentials: 'include' })
+      if (refreshRes.ok) {
+        const updated = await refreshRes.json()
+        onUpdateSubmission?.(updated as Submission)
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to update gallery status')
+    } finally {
+      setUpdating(null)
+    }
+  }
 
   if (submissions.length === 0) {
     return (
@@ -623,102 +1207,172 @@ function SubmissionsTable({
     )
   }
 
+  // 计算最终显示状态：gallery rejected 覆盖一切
+  const getFinalStatus = (submission: Submission) => {
+    if (submission.galleryStatus === 'not_selected') {
+      return { label: 'REJECTED', color: 'bg-red-50 text-red-700', source: 'gallery' }
+    }
+    if (submission.galleryStatus === 'selected') {
+      return { label: 'ACCEPTED', color: 'bg-green-50 text-green-700', source: 'gallery' }
+    }
+    // galleryStatus is pending → show jury status
+    if (submission.juryStatus === 'accepted') {
+      return { label: 'JURY ACCEPTED', color: 'bg-emerald-50 text-emerald-700', source: 'jury' }
+    }
+    if (submission.juryStatus === 'rejected') {
+      return { label: 'JURY REJECTED', color: 'bg-orange-50 text-orange-700', source: 'jury' }
+    }
+    return { label: 'PENDING', color: 'bg-yellow-50 text-yellow-700', source: 'none' }
+  }
+
   return (
-    <>
-      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Artwork</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Artist</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Exhibition</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Submitted</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Jury Status</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-200">
-              {submissions.map((submission) => {
-                const artist = typeof submission.artist === 'object' ? submission.artist : null
-                const artwork = typeof submission.artwork === 'object' ? submission.artwork : null
-                const exhibitionData = typeof submission.exhibition === 'object' ? submission.exhibition : null
+    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-neutral-50 border-b border-neutral-200">
+            <tr>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-12">#</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Artwork</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Artist</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Exhibition</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Submitted</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Gallery Decision</th>
+              <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-neutral-200">
+            {submissions.map((submission, index) => {
+              const artist = typeof submission.artist === 'object' ? submission.artist : null
+              const artwork = typeof submission.artwork === 'object' ? submission.artwork : null
+              const exhibitionData = typeof submission.exhibition === 'object' ? submission.exhibition : null
 
-                const assignedJurors = (((submission as any).assignedJurors) || []) as any[]
-                const assignedNames = assignedJurors
-                  .map((j: any) => typeof j === 'object' ? (j.name || j.email || '') : '')
-                  .filter(Boolean)
-                  .join(', ')
+              const assignedJurors = (((submission as any).assignedJurors) || []) as any[]
+              const assignedNames = assignedJurors
+                .map((j: any) => typeof j === 'object' ? (j.name || j.email || '') : '')
+                .filter(Boolean)
+                .join(', ')
 
-                const isUpdating = updating === submission.id
+              const isUpdating = updating === submission.id
+              const finalStatus = getFinalStatus(submission)
 
-                return (
-                  <tr key={submission.id} className="hover:bg-neutral-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-neutral-200 rounded-lg overflow-hidden">
-                          {artwork && isMedia((artwork as any).image) && (
-                            <img
-                              src={`${PAYLOAD_URL}${(artwork as any).image.url}`}
-                              alt={artwork.title}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                        </div>
-                        <span className="text-sm font-medium text-neutral-900">{artwork?.title || 'Untitled'}</span>
+              return (
+                <tr key={submission.id} className={`hover:bg-neutral-50 transition-colors ${submission.galleryStatus === 'not_selected' ? 'opacity-50' : ''}`}>
+                  {/* Row Number */}
+                  <td className="px-4 py-4 text-sm font-bold text-neutral-300">{index + 1}</td>
+
+                  <td className="px-4 py-4">
+                    <button
+                      onClick={() => onViewSubmission?.(submission)}
+                      className="flex items-center gap-3 hover:opacity-75 transition-opacity"
+                    >
+                      <div className="w-12 h-12 bg-neutral-200 rounded-lg overflow-hidden flex-shrink-0">
+                        {artwork && isMedia((artwork as any).image) && (
+                          <img
+                            src={`${PAYLOAD_URL}${(artwork as any).image.url}`}
+                            alt={artwork.title}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
                       </div>
-                    </td>
+                      <span className="text-sm font-medium text-blue-600 hover:text-blue-700 underline decoration-blue-200">{artwork?.title || 'Untitled'}</span>
+                    </button>
+                  </td>
 
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {artist?.name || artist?.email || 'Unknown'}
-                    </td>
+                  <td className="px-4 py-4 text-sm text-gray-900">
+                    {(() => {
+                      const displayArtists = (submission as any).displayArtists as string[] | undefined
+                      if (displayArtists && displayArtists.length > 0) return displayArtists.join(', ')
+                      return artist?.name || artist?.email || 'Unknown'
+                    })()}
+                  </td>
 
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-900">{exhibitionData?.title || 'N/A'}</span>
-                    </td>
+                  <td className="px-4 py-4">
+                    <span className="text-sm text-gray-900">{exhibitionData?.title || 'N/A'}</span>
+                  </td>
 
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {formatDate(submission.submittedAt)}
-                    </td>
+                  <td className="px-4 py-4 text-sm text-gray-600">
+                    {formatDate(submission.submittedAt)}
+                  </td>
 
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                        submission.juryStatus === 'accepted' ? 'bg-green-50 text-green-700' : 
-                        submission.juryStatus === 'rejected' ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700'
-                      }`}>
-                        {submission.juryStatus?.toUpperCase()}
+                  {/* Final Status */}
+                  <td className="px-4 py-4">
+                    <div className="flex flex-col gap-1">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold ${finalStatus.color}`}>
+                        {finalStatus.label}
                       </span>
-                    </td>
+                      {finalStatus.source === 'gallery' && submission.juryStatus !== 'pending' && (
+                        <span className="text-[10px] text-gray-400">
+                          Jury: {submission.juryStatus}
+                        </span>
+                      )}
+                    </div>
+                  </td>
 
-                    {/* 🔧 Gallery Status Removed from Table */}
+                  {/* Gallery Decision Buttons */}
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleGalleryDecision(submission, 'selected')}
+                        disabled={isUpdating}
+                        className={`px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all disabled:opacity-50 ${
+                          submission.galleryStatus === 'selected'
+                            ? 'bg-green-500 text-white shadow-sm'
+                            : 'bg-white border border-neutral-200 text-green-600 hover:bg-green-50 hover:border-green-300'
+                        }`}
+                      >
+                        {isUpdating ? <Loader2 className="w-3 h-3 animate-spin" /> : '✓ Accept'}
+                      </button>
+                      <button
+                        onClick={() => handleGalleryDecision(submission, 'not_selected')}
+                        disabled={isUpdating}
+                        className={`px-2.5 py-1.5 text-[10px] font-bold rounded-lg transition-all disabled:opacity-50 ${
+                          submission.galleryStatus === 'not_selected'
+                            ? 'bg-red-500 text-white shadow-sm'
+                            : 'bg-white border border-neutral-200 text-red-600 hover:bg-red-50 hover:border-red-300'
+                        }`}
+                      >
+                        {isUpdating ? <Loader2 className="w-3 h-3 animate-spin" /> : '✗ Reject'}
+                      </button>
+                      {submission.galleryStatus !== 'pending' && (
+                        <button
+                          onClick={() => handleGalleryDecision(submission, 'pending' as any)}
+                          disabled={isUpdating}
+                          className="px-2 py-1.5 text-[10px] font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-50"
+                          title="Reset to pending"
+                        >
+                          ↺
+                        </button>
+                      )}
+                    </div>
+                  </td>
 
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-2">
-                        <div className="text-xs text-gray-500">
-                          {assignedJurors.length ? `Assigned: ${assignedNames}` : 'No juror assigned'}
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 items-center">
-                          {onAssignJurors && (
-                            <button
-                              onClick={() => onAssignJurors(submission)}
-                              disabled={isUpdating}
-                              className="px-2.5 py-1 text-xs font-semibold text-neutral-900 bg-white border border-neutral-200 rounded-full hover:bg-neutral-50 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <Users className="w-3 h-3" /> Assign
-                            </button>
-                          )}
-                        </div>
+                  <td className="px-4 py-4">
+                    <div className="flex flex-col gap-2">
+                      <div className="text-xs text-gray-500">
+                        {assignedJurors.length ? `Jurors: ${assignedNames}` : 'No juror assigned'}
                       </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+
+                      <div className="flex flex-wrap gap-2 items-center">
+                        {onAssignJurors && (
+                          <button
+                            onClick={() => onAssignJurors(submission)}
+                            disabled={isUpdating}
+                            className="px-2.5 py-1 text-xs font-semibold text-neutral-900 bg-white border border-neutral-200 rounded-full hover:bg-neutral-50 inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Users className="w-3 h-3" /> Assign
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -750,11 +1404,11 @@ function ManageJurorsModal({ exhibition, currentUser, onClose, onSuccess }: Mana
         if (response.ok) {
           const data = await response.json()
           let users = data.docs || []
-          
+
           if (currentUser && !users.find((u: any) => u.id === currentUser.id)) {
             users = [currentUser, ...users]
           }
-          
+
           setAllJurors(users)
           const currentJurors = new Set(
             (exhibition.jurors as any[] || []).map((j: any) => String(j.id || j))
@@ -789,7 +1443,7 @@ function ManageJurorsModal({ exhibition, currentUser, onClose, onSuccess }: Mana
         const error = await response.json()
         throw new Error(error.error || 'Failed to invite juror')
       }
-      
+
       const listResponse = await fetch(
         `${PAYLOAD_URL}/api/users?where[or][0][appRole][equals]=juror&where[or][1][appRole][equals]=gallery&limit=100`,
         { credentials: 'include' }
@@ -798,7 +1452,7 @@ function ManageJurorsModal({ exhibition, currentUser, onClose, onSuccess }: Mana
         const data = await listResponse.json()
         setAllJurors(data.docs || [])
       }
-      
+
       const result = await response.json()
       setSelectedJurors(prev => new Set([...prev, String(result.juror.id)]))
       setInviteForm({ email: '', name: '' })
@@ -859,7 +1513,7 @@ function ManageJurorsModal({ exhibition, currentUser, onClose, onSuccess }: Mana
         </div>
         {showInviteForm && (
           <div className="p-6 bg-blue-50 border-b border-blue-100">
-            <form onSubmit={handleInviteJuror} className="space-y-4">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-900 mb-2">Name *</label>
@@ -872,11 +1526,16 @@ function ManageJurorsModal({ exhibition, currentUser, onClose, onSuccess }: Mana
               </div>
               <div className="flex gap-3">
                 <button type="button" onClick={() => setShowInviteForm(false)} className="px-4 py-2 border border-neutral-300 text-neutral-900 rounded-lg hover:bg-neutral-50 transition-colors text-sm font-medium">Cancel</button>
-                <button type="submit" disabled={inviting} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold disabled:opacity-50 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleInviteJuror}
+                  disabled={inviting || !inviteForm.name || !inviteForm.email}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold disabled:opacity-50 flex items-center gap-2"
+                >
                   {inviting ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : <><Send className="w-4 h-4" /> Send Invitation</>}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         )}
         <div className="flex-1 overflow-y-auto p-6">
@@ -942,7 +1601,7 @@ function AssignJurorsModal({ submission, currentUser, onClose, onSuccess }: Assi
       try {
         setLoading(true)
         const response = await fetch(
-          `${PAYLOAD_URL}/api/users?where[or][0][appRole][equals]=juror&where[or][1][appRole][equals]=gallery&limit=100`, 
+          `${PAYLOAD_URL}/api/users?where[or][0][appRole][equals]=juror&where[or][1][appRole][equals]=gallery&limit=100`,
           { credentials: 'include' }
         )
 
@@ -989,7 +1648,7 @@ function AssignJurorsModal({ submission, currentUser, onClose, onSuccess }: Assi
     setSaving(true)
     try {
       const jurorIds = Array.from(selectedJurors).map(id => parseInt(id, 10))
-      
+
       const res = await fetch(`${PAYLOAD_URL}/api/submissions/${submission.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1000,7 +1659,7 @@ function AssignJurorsModal({ submission, currentUser, onClose, onSuccess }: Assi
       if (!res.ok) throw new Error('Failed to assign jurors')
 
       const refreshRes = await fetch(`${PAYLOAD_URL}/api/submissions/${submission.id}?depth=3`, { credentials: 'include' })
-      
+
       if (refreshRes.ok) {
         const updated = await refreshRes.json()
         onSuccess(updated as Submission)
@@ -1023,7 +1682,7 @@ function AssignJurorsModal({ submission, currentUser, onClose, onSuccess }: Assi
             Assign jurors to review "{typeof submission.artwork === 'object' ? (submission.artwork as any).title || 'Artwork' : 'Artwork'}"
           </p>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -1038,12 +1697,12 @@ function AssignJurorsModal({ submission, currentUser, onClose, onSuccess }: Assi
           ) : (
             <div className="space-y-2">
               {allUsers.map(user => (
-                <button 
-                  key={user.id} 
-                  onClick={() => toggleJuror(String(user.id))} 
+                <button
+                  key={user.id}
+                  onClick={() => toggleJuror(String(user.id))}
                   className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
-                    selectedJurors.has(String(user.id)) 
-                    ? 'border-blue-500 bg-blue-50' 
+                    selectedJurors.has(String(user.id))
+                    ? 'border-blue-500 bg-blue-50'
                     : 'border-neutral-200 hover:border-neutral-300'
                   }`}
                 >
@@ -1054,11 +1713,9 @@ function AssignJurorsModal({ submission, currentUser, onClose, onSuccess }: Assi
                     <div className="text-left">
                       <div className="font-semibold text-neutral-900 flex items-center gap-2">
                         {user.name || 'Unnamed User'}
-                        {/* 标记自己 */}
                         {user.id === currentUser?.id && (
                           <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 font-bold">YOU</span>
                         )}
-                        {/* 标记是否是 Gallery 角色 */}
                         {user.appRole === 'gallery' && user.id !== currentUser?.id && (
                           <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded border border-purple-200 font-bold">GALLERY</span>
                         )}
@@ -1079,9 +1736,9 @@ function AssignJurorsModal({ submission, currentUser, onClose, onSuccess }: Assi
           </div>
           <div className="flex gap-3">
             <button onClick={onClose} className="flex-1 px-6 py-3 border-2 border-neutral-300 text-neutral-900 font-semibold rounded-full hover:bg-neutral-100 transition-all">Cancel</button>
-            <button 
-              onClick={handleSave} 
-              disabled={saving} 
+            <button
+              onClick={handleSave}
+              disabled={saving}
               className="flex-1 px-6 py-3 bg-neutral-900 text-white font-semibold rounded-full hover:bg-neutral-800 transition-all disabled:opacity-50 inline-flex items-center justify-center gap-2"
             >
               {saving ? <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</> : <><Check className="w-5 h-5" /> Save</>}
@@ -1112,7 +1769,7 @@ function BatchAssignModal({ exhibitionId, currentUser, onClose, onSuccess }: Bat
       try {
         const exRes = await fetch(`${PAYLOAD_URL}/api/exhibitions/${exhibitionId}?depth=1`, { credentials: 'include' })
         const exData = await exRes.json()
-        
+
         let availableJurors: User[] = []
         if (Array.isArray(exData.jurors)) {
           availableJurors = exData.jurors
@@ -1158,7 +1815,7 @@ function BatchAssignModal({ exhibitionId, currentUser, onClose, onSuccess }: Bat
       const submissions = subData.docs || []
       const jurorIds = Array.from(selectedJurors).map(id => parseInt(id))
 
-      const updatePromises = submissions.map((sub: any) => 
+      const updatePromises = submissions.map((sub: any) =>
         fetch(`${PAYLOAD_URL}/api/submissions/${sub.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -1187,9 +1844,9 @@ function BatchAssignModal({ exhibitionId, currentUser, onClose, onSuccess }: Bat
         </div>
         <div className="p-6 max-h-[60vh] overflow-y-auto">
           {loading ? (
-             <div className="flex justify-center"><Loader2 className="animate-spin text-neutral-400" /></div>
+            <div className="flex justify-center"><Loader2 className="animate-spin text-neutral-400" /></div>
           ) : jurors.length === 0 ? (
-             <p className="text-center text-gray-500">No jurors found.</p>
+            <p className="text-center text-gray-500">No jurors found.</p>
           ) : (
             <div className="space-y-3">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Select Jurors</p>
@@ -1198,14 +1855,14 @@ function BatchAssignModal({ exhibitionId, currentUser, onClose, onSuccess }: Bat
                   key={juror.id}
                   onClick={() => toggleJuror(String(juror.id))}
                   className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
-                    selectedJurors.has(String(juror.id)) 
-                    ? 'border-blue-500 bg-blue-50' 
+                    selectedJurors.has(String(juror.id))
+                    ? 'border-blue-500 bg-blue-50'
                     : 'border-neutral-100 hover:border-neutral-200'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                       selectedJurors.has(String(juror.id)) ? 'bg-blue-600 text-white' : 'bg-neutral-200 text-neutral-600'
+                      selectedJurors.has(String(juror.id)) ? 'bg-blue-600 text-white' : 'bg-neutral-200 text-neutral-600'
                     }`}>
                       {juror.name?.[0] || 'U'}
                     </div>
@@ -1226,7 +1883,7 @@ function BatchAssignModal({ exhibitionId, currentUser, onClose, onSuccess }: Bat
         </div>
         <div className="p-6 border-t border-neutral-100 bg-neutral-50 flex gap-3">
           <button onClick={onClose} className="flex-1 py-2.5 font-semibold text-gray-600 hover:bg-neutral-200 rounded-lg transition-colors">Cancel</button>
-          <button 
+          <button
             onClick={handleBatchAssign}
             disabled={processing || selectedJurors.size === 0}
             className="flex-1 py-2.5 bg-neutral-900 text-white font-bold rounded-lg hover:bg-neutral-800 disabled:opacity-50 flex items-center justify-center gap-2"
