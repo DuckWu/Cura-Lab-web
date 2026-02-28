@@ -130,7 +130,7 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   appRole?: ('admin' | 'artist' | 'gallery' | 'juror' | 'user') | null;
-  name?: string | null;
+  name: string;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -324,6 +324,20 @@ export interface Artwork {
   sold_date?: string | null;
   buyer?: (number | null) | User;
   /**
+   * Buyer full name
+   */
+  buyer_name?: string | null;
+  /**
+   * Buyer email or phone
+   */
+  buyer_contact?: string | null;
+  payment_method?: ('cash' | 'card' | 'app' | 'other') | null;
+  /**
+   * Auto-calculated gallery commission
+   */
+  commission_amount?: number | null;
+  sale_notes?: string | null;
+  /**
    * Assigned by the gallery after acceptance
    */
   label_number?: string | null;
@@ -341,6 +355,18 @@ export interface Submission {
   artist: number | User;
   exhibition: number | Exhibition;
   artwork: number | Artwork;
+  /**
+   * Artist name(s) to display on exhibition tags. Array of strings, e.g. ["Jane Doe", "John Smith"]
+   */
+  displayArtists?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   /**
    * Set by Jurors during the selection process.
    */
@@ -603,6 +629,11 @@ export interface ArtworksSelect<T extends boolean = true> {
   sold_price?: T;
   sold_date?: T;
   buyer?: T;
+  buyer_name?: T;
+  buyer_contact?: T;
+  payment_method?: T;
+  commission_amount?: T;
+  sale_notes?: T;
   label_number?: T;
   status?: T;
   updatedAt?: T;
@@ -617,6 +648,7 @@ export interface SubmissionsSelect<T extends boolean = true> {
   artist?: T;
   exhibition?: T;
   artwork?: T;
+  displayArtists?: T;
   juryStatus?: T;
   assignedJurors?: T;
   galleryStatus?: T;

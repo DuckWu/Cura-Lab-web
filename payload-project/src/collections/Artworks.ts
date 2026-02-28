@@ -324,6 +324,63 @@ export const Artworks: CollectionConfig = {
         condition: (data) => data?.sale_status === 'sold',
       },
     },
+    // Add these fields in Artworks.ts, after the existing 'buyer' field:
+
+    {
+      name: 'buyer_name',
+      type: 'text',
+      required: false,
+      admin: {
+        position: 'sidebar',
+        description: 'Buyer full name',
+        condition: (data) => data?.sale_status === 'sold' || data?.sale_status === 'pending',
+      },
+    },
+    {
+      name: 'buyer_contact',
+      type: 'text',
+      required: false,
+      admin: {
+        position: 'sidebar',
+        description: 'Buyer email or phone',
+        condition: (data) => data?.sale_status === 'sold' || data?.sale_status === 'pending',
+      },
+    },
+    {
+      name: 'payment_method',
+      type: 'select',
+      options: [
+        { label: 'Cash', value: 'cash' },
+        { label: 'Credit Card', value: 'card' },
+        { label: 'App Payment', value: 'app' },
+        { label: 'Other', value: 'other' },
+      ],
+      required: false,
+      admin: {
+        position: 'sidebar',
+        condition: (data) => data?.sale_status === 'sold',
+      },
+    },
+    {
+      name: 'commission_amount',
+      type: 'number',
+      required: false,
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description: 'Auto-calculated gallery commission',
+        condition: (data) => data?.sale_status === 'sold',
+      },
+    },
+    {
+      name: 'sale_notes',
+      type: 'textarea',
+      required: false,
+      admin: {
+        position: 'sidebar',
+        condition: (data) => data?.sale_status === 'sold' || data?.sale_status === 'pending',
+      },
+    },
     {
       name: 'label_number',
       type: 'text',

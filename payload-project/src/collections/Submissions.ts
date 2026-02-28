@@ -143,17 +143,7 @@ export const Submissions: CollectionConfig = {
       type: 'relationship',
       relationTo: 'exhibitions',
       required: true,
-      filterOptions: (): any => ({
-        submission_deadline: {
-          greater_than: new Date().toISOString(),
-        },
-        exhibitionStatus: {
-          equals: 'open',
-        },
-        status: {
-          equals: 'published',
-        },
-      }),
+      
     },
     {
       name: 'artwork',
@@ -175,6 +165,25 @@ export const Submissions: CollectionConfig = {
         }
 
         return {}
+      },
+    },
+    {
+      name: 'displayArtists',
+      type: 'json',
+      admin: {
+        description: 'Artist name(s) to display on exhibition tags. Array of strings, e.g. ["Jane Doe", "John Smith"]',
+      },
+      // 任何人可以读，但只有 artist 本人（创建时）和 admin/gallery 可以改
+      access: {
+        read: () => true,
+        update: ({ req }) => {
+          const user = req.user as CorrectUser | null | undefined
+          return (
+            user?.appRole === APP_ROLES.admin ||
+            user?.appRole === APP_ROLES.gallery ||
+            user?.appRole === APP_ROLES.artist
+          )
+        },
       },
     },
     {
@@ -396,16 +405,29 @@ export const Submissions: CollectionConfig = {
       async ({ data, req, operation, originalDoc }) => {
         console.log('=== beforeChange START ===')
         const user = req.user as CorrectUser | null | undefined
+
+        // Helper: extract ID from a value that might be an object or a number
+        const toId = (val: any): number | string | undefined => {
+          if (!val) return undefined
+          if (typeof val === 'object' && val.id) return val.id
+          return val
+        }
         
         if (operation === 'update' && originalDoc) {
           if (!data.artist && originalDoc.artist) {
-            data.artist = typeof originalDoc.artist === 'object' ? (originalDoc.artist as any).id : originalDoc.artist
+            data.artist = toId(originalDoc.artist)
+          } else if (data.artist) {
+            data.artist = toId(data.artist)
           }
           if (!data.exhibition && originalDoc.exhibition) {
-            data.exhibition = typeof originalDoc.exhibition === 'object' ? (originalDoc.exhibition as any).id : originalDoc.exhibition
+            data.exhibition = toId(originalDoc.exhibition)
+          } else if (data.exhibition) {
+            data.exhibition = toId(data.exhibition)
           }
           if (!data.artwork && originalDoc.artwork) {
-            data.artwork = typeof originalDoc.artwork === 'object' ? (originalDoc.artwork as any).id : originalDoc.artwork
+            data.artwork = toId(originalDoc.artwork)
+          } else if (data.artwork) {
+            data.artwork = toId(data.artwork)
           }
         }
 
@@ -416,8 +438,8 @@ export const Submissions: CollectionConfig = {
             where: {
               and: [
                 { artist: { equals: user?.id } },
-                { artwork: { equals: data.artwork } },
-                { exhibition: { equals: data.exhibition } },
+                { artwork: { equals: toId(data.artwork) } },
+                { exhibition: { equals: toId(data.exhibition) } },
               ],
             },
             limit: 1,
@@ -437,7 +459,7 @@ export const Submissions: CollectionConfig = {
             console.log('Fetching exhibition for fee...')
             const exhibition = await req.payload.findByID({
               collection: 'exhibitions',
-              id: data.exhibition,
+              id: toId(data.exhibition)!,
               depth: 0,
             })
             data.paymentAmount = exhibition.submission_fee
@@ -456,12 +478,15 @@ export const Submissions: CollectionConfig = {
           data.reviewHistory = [...(originalDoc?.reviewHistory || []), historyEntry]
         }
 
-        if (data.artist && data.exhibition) {
+        // Generate title - use IDs safely
+        const artistId = toId(data.artist)
+        const exhibitionId = toId(data.exhibition)
+        if (artistId && exhibitionId) {
           console.log('Generating title...')
           try {
             const [artist, exhibition] = await Promise.all([
-              req.payload.findByID({ collection: 'users', id: data.artist, depth: 0 }),
-              req.payload.findByID({ collection: 'exhibitions', id: data.exhibition, depth: 0 }),
+              req.payload.findByID({ collection: 'users', id: artistId, depth: 0 }),
+              req.payload.findByID({ collection: 'exhibitions', id: exhibitionId, depth: 0 }),
             ])
             data.title = `${(artist as any).name || artist.email} - ${exhibition.title}`
             console.log('Title generated:', data.title)
