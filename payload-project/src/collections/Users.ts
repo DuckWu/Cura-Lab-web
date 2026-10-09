@@ -14,11 +14,12 @@ export const Users: CollectionConfig = {
   slug: 'users',
   // (!!) Payload 的内置 auth 功能
   auth: {
-    // 允许跨域 Cookie 的关键配置
+    // sameSite=None + secure requires HTTPS; on local HTTP dev the browser
+    // would silently drop the auth cookie and login would never "stick".
     cookies: {
-      sameSite: 'None', // 允许跨站 (Cross-Site)
-      secure: true,     // 必须是 HTTPS (Vercel 默认就是 HTTPS，所以没问题)
-      domain: undefined // 不要设置 domain，让它自动匹配
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      secure: process.env.NODE_ENV === 'production',
+      domain: undefined, // 不要设置 domain，让它自动匹配
     },
     // 其他 auth 配置...
     tokenExpiration: 7200, // 2小时过期
@@ -96,7 +97,11 @@ export const Users: CollectionConfig = {
  
       access: {
 
-        create: ({ req }) => true,
+        // Field-level create stays permissive: the beforeChange hook below is
+        // the single enforcement point for role assignment (it strips any
+        // disallowed role, so a restrictive field rule here would only break
+        // the legitimate artist/gallery signup flow).
+        create: () => true,
         update: ({ req }) => req.user?.appRole === APP_ROLES.admin,
         read: ({ req }) => {
           if (!req.user) return false
@@ -128,10 +133,37 @@ export const Users: CollectionConfig = {
   ],
   hooks: {
     beforeChange: [
-      ({ data, req, operation }) => {
+      async ({ data, req, operation }) => {
         if (operation === 'create') {
-          // 如果已经显式传了 appRole（包括 'juror'），就尊重它
-          if (!data.appRole) {
+          // Defense in depth: only an admin creating the user may assign any
+          // role freely. Public registration may choose from a safe allowlist
+          // (artist/gallery) — never admin/juror — even if appRole was
+          // explicitly passed in the request body. Internal flows (e.g. juror
+          // invitations) opt in via req.context.
+          const SELF_ASSIGNABLE = [APP_ROLES.artist, APP_ROLES.gallery]
+          const allowRoleAssignment =
+            (req as any).context?.allowRoleAssignment === true
+          if (
+            allowRoleAssignment ||
+            req.user?.appRole === APP_ROLES.admin
+          ) {
+            if (!data.appRole) data.appRole = APP_ROLES.user
+          } else if (SELF_ASSIGNABLE.includes(data.appRole)) {
+            // respect the signup role choice
+          } else if (data.appRole) {
+            // Bootstrap escape hatch: on a completely fresh database with zero
+            // users, honor an explicitly requested role so the first admin can
+            // be created (Payload's register-first-user flow hits this path
+            // with an anonymous req). The window closes permanently as soon as
+            // the first user exists.
+            const { totalDocs } = await req.payload.count({
+              collection: 'users',
+              overrideAccess: true,
+            })
+            if (totalDocs !== 0) {
+              data.appRole = APP_ROLES.user
+            }
+          } else {
             data.appRole = APP_ROLES.user
           }
         }

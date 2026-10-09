@@ -178,7 +178,7 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50">
+    <div className="min-h-screen bg-paper sans-headings">
       {/* Header */}
       <div className="bg-white border-b border-neutral-200">
         <div className="max-w-4xl mx-auto px-6 lg:px-8 py-6">
@@ -240,7 +240,7 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                     )}
                   </div>
                 ) : (
-                  <label className={`block aspect-[3/4] bg-white border-2 border-dashed rounded-2xl transition-all cursor-pointer group ${compressing ? 'border-gray-200 bg-gray-50' : 'border-neutral-300 hover:border-blue-500'}`}>
+                  <label className={`block aspect-[3/4] bg-white border-2 border-dashed rounded-2xl transition-all cursor-pointer group ${compressing ? 'border-gray-200 bg-gray-50' : 'border-neutral-300 hover:border-ink'}`}>
                     <input
                       type="file"
                       accept="image/*"
@@ -251,13 +251,13 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                     <div className="w-full h-full flex flex-col items-center justify-center text-center p-6">
                       {compressing ? (
                         <>
-                          <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+                          <Loader2 className="w-8 h-8 text-ink animate-spin mb-4" />
                           <p className="text-sm font-medium text-neutral-900">Processing...</p>
                         </>
                       ) : (
                         <>
-                          <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-blue-50 transition-colors">
-                            <Upload className="w-8 h-8 text-neutral-400 group-hover:text-blue-500 transition-colors" />
+                          <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-fog transition-colors">
+                            <Upload className="w-8 h-8 text-neutral-400 group-hover:text-ink transition-colors" />
                           </div>
                           <p className="text-sm font-medium text-neutral-900 mb-1">
                             Click to upload
@@ -294,7 +294,7 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
                   placeholder="Sunset Over Mountains"
-                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -309,7 +309,7 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={4}
                   placeholder="Describe your artwork..."
-                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-transparent transition-all resize-none"
                 />
               </div>
 
@@ -324,7 +324,7 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     required
-                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-transparent transition-all"
                   >
                     <option value="painting">Painting</option>
                     <option value="sculpture">Sculpture</option>
@@ -347,7 +347,7 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                     value={formData.medium}
                     onChange={(e) => setFormData({ ...formData, medium: e.target.value })}
                     placeholder="Oil on canvas"
-                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-transparent transition-all"
                   />
                 </div>
               </div>
@@ -365,7 +365,7 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                     onChange={(e) => setFormData({ ...formData, width: e.target.value })}
                     required
                     placeholder="Width"
-                    className="px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-transparent transition-all"
                   />
                   <input
                     type="number"
@@ -374,7 +374,7 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                     onChange={(e) => setFormData({ ...formData, height: e.target.value })}
                     required
                     placeholder="Height"
-                    className="px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-transparent transition-all"
                   />
                   <input
                     type="number"
@@ -382,12 +382,12 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                     value={formData.depth}
                     onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
                     placeholder="Depth"
-                    className="px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-transparent transition-all"
                   />
                   <select
                     value={formData.unit}
                     onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    className="px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-transparent transition-all"
                   >
                     <option value="in">Inches</option>
                     <option value="cm">CM</option>
@@ -410,7 +410,7 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                   onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
                   min="1900"
                   max={new Date().getFullYear()}
-                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-transparent transition-all"
                 />
               </div>
 
@@ -424,7 +424,7 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                     id="sale_status"
                     value={formData.sale_status}
                     onChange={(e) => setFormData({ ...formData, sale_status: e.target.value })}
-                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-transparent transition-all"
                   >
                     <option value="not_for_sale">Not for Sale</option>
                     <option value="for_sale">For Sale</option>
@@ -443,7 +443,7 @@ export default function CreateArtwork({ currentUser, onBack, onSuccess }: Create
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                       placeholder="1000.00"
-                      className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 focus:border-transparent transition-all"
                     />
                   </div>
                 )}

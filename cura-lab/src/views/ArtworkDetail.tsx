@@ -160,7 +160,7 @@ export default function ArtworkDetail({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+      <div className="min-h-screen bg-paper flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-neutral-900 animate-spin mx-auto mb-4" />
           <p className="text-lg text-gray-600">Loading artwork...</p>
@@ -171,7 +171,7 @@ export default function ArtworkDetail({
 
   if (error || !artwork) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-paper flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-neutral-200">
           <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-600" />
@@ -196,7 +196,7 @@ export default function ArtworkDetail({
       : 'N/A')
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-paper">
       {/* Header */}
       <div className="bg-white border-b border-neutral-200">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6">
@@ -303,7 +303,7 @@ export default function ArtworkDetail({
                   artwork.sale_status === 'for_sale'
                     ? 'bg-green-500 text-white'
                     : artwork.sale_status === 'sold'
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-ink text-white'
                     : 'bg-neutral-500 text-white'
                 }`}>
                   {artwork.sale_status?.replace('_', ' ').toUpperCase() || 'NOT FOR SALE'}

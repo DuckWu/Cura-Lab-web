@@ -1,6 +1,6 @@
 // src/views/Login.tsx
 import { useState } from 'react'
-import { ArrowLeft, Loader2, Mail, Lock } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 
 const PAYLOAD_URL = import.meta.env.VITE_PAYLOAD_URL
 
@@ -27,7 +27,7 @@ export default function Login({ onBack, onLoginSuccess, onSwitchToSignup }: Logi
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // 重要：保存 cookies
+        credentials: 'include',
         body: JSON.stringify({
           email,
           password,
@@ -40,7 +40,6 @@ export default function Login({ onBack, onLoginSuccess, onSwitchToSignup }: Logi
         throw new Error(data.message || 'Login failed')
       }
 
-      // 登录成功
       onLoginSuccess()
     } catch (err: any) {
       console.error('Login error:', err)
@@ -51,110 +50,103 @@ export default function Login({ onBack, onLoginSuccess, onSwitchToSignup }: Logi
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Back Button */}
+    <div className="min-h-screen bg-paper flex">
+      {/* Left — brand panel */}
+      <div className="hidden lg:flex w-[42%] bg-ink text-paper flex-col justify-between p-12 xl:p-16">
         <button
           onClick={onBack}
-          className="group inline-flex items-center gap-2 text-gray-600 hover:text-neutral-900 font-medium mb-8 transition-colors"
+          className="group inline-flex items-center gap-2 text-[13px] tracking-[0.12em] uppercase text-paper/50 hover:text-paper font-medium transition-colors self-start"
         >
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          <span>Back to Home</span>
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span>Home</span>
         </button>
+        <div>
+          <p className="font-display text-xl tracking-[0.18em] uppercase text-paper/40 mb-8">Cura Lab</p>
+          <p className="display text-paper text-4xl xl:text-5xl leading-[1.15]">
+            Where art meets<br /><span className="italic">its audience.</span>
+          </p>
+        </div>
+        <p className="text-sm text-paper/40 font-light">A considered platform for exhibitions.</p>
+      </div>
 
-        {/* Login Card */}
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-xl overflow-hidden">
-          {/* Header */}
-          <div className="p-8 pb-6 border-b border-neutral-100">
-            <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4">
-              CL
-            </div>
-            <h1 className="text-3xl font-bold text-neutral-900 mb-2">
-              Welcome back
-            </h1>
-            <p className="text-gray-600">
-              Sign in to access your dashboard
-            </p>
-          </div>
+      {/* Right — form */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
+        <div className="w-full max-w-md">
+          <button
+            onClick={onBack}
+            className="lg:hidden group inline-flex items-center gap-2 text-[13px] tracking-[0.12em] uppercase text-stone hover:text-ink font-medium mb-10 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span>Home</span>
+          </button>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-8">
+          <p className="eyebrow mb-4">Sign In</p>
+          <h1 className="display text-4xl sm:text-5xl mb-3">Welcome back</h1>
+          <p className="text-stone font-light mb-12">Sign in to access your dashboard.</p>
+
+          <form onSubmit={handleSubmit}>
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{error}</p>
+              <div className="mb-8 px-5 py-4 border border-ink/20 bg-ink/[0.03]">
+                <p className="text-sm text-ink">{error}</p>
               </div>
             )}
 
-            <div className="space-y-5">
-              {/* Email Input */}
+            <div className="space-y-8">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-neutral-900 mb-2">
+                <label htmlFor="email" className="eyebrow block mb-3">
                   Email
                 </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    placeholder="your@email.com"
-                    className="w-full pl-11 pr-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  />
-                </div>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="your@email.com"
+                  className="w-full bg-transparent py-3 border-b border-fog focus:border-ink outline-none transition-colors text-[16px] placeholder:text-stone/50"
+                />
               </div>
 
-              {/* Password Input */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-neutral-900 mb-2">
+                <label htmlFor="password" className="eyebrow block mb-3">
                   Password
                 </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="••••••••"
-                    className="w-full pl-11 pr-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  />
-                </div>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="••••••••"
+                  className="w-full bg-transparent py-3 border-b border-fog focus:border-ink outline-none transition-colors text-[16px] placeholder:text-stone/50"
+                />
               </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full px-6 py-3 text-base font-semibold text-white bg-neutral-900 hover:bg-neutral-800 rounded-full transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
-              >
+              <button type="submit" disabled={loading} className="btn-solid w-full disabled:opacity-50">
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Signing in...
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Signing in
                   </>
                 ) : (
                   'Sign In'
                 )}
               </button>
             </div>
-
-            {/* Footer Links */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <button
-                  type="button"
-                  onClick={onSwitchToSignup}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  Sign up
-                </button>
-              </p>
-            </div>
           </form>
+
+          <div className="mt-10 pt-8 border-t border-fog text-center">
+            <p className="text-sm text-stone">
+              Don&apos;t have an account?{' '}
+              <button
+                type="button"
+                onClick={onSwitchToSignup}
+                className="text-ink font-medium underline underline-offset-4 decoration-ink/30 hover:decoration-ink transition-all"
+              >
+                Create one
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </div>

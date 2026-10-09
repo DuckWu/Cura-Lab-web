@@ -24,6 +24,9 @@ export const Exhibitions: CollectionConfig = {
           or: [
             { status: { equals: 'published' } },
             { 'gallery.owner': { equals: user.id } },
+            // A gallery can also serve as a juror: list membership (not role)
+            // is the authority, so include exhibitions they're assigned to.
+            { jurors: { contains: user.id } },
           ],
         } as any
       }
@@ -36,7 +39,19 @@ export const Exhibitions: CollectionConfig = {
           ],
         } as any
       }
-      
+
+      // Authenticated users assigned as jurors (any role — a gallery or an
+      // artist can serve as juror) can read those exhibitions even before
+      // they're published. Anonymous visitors only see published ones.
+      if (user) {
+        return {
+          or: [
+            { status: { equals: 'published' } },
+            { jurors: { contains: user.id } },
+          ],
+        } as any
+      }
+
       return {
         status: {
           equals: 'published',
@@ -210,8 +225,9 @@ export const Exhibitions: CollectionConfig = {
       relationTo: 'users',
       hasMany: true,
       filterOptions: {
+        // 评审身份按名单判定：juror 和 gallery 角色都可以被指派为评审
         appRole: {
-          equals: APP_ROLES.juror,
+          in: [APP_ROLES.juror, APP_ROLES.gallery],
         },
       },
       admin: {

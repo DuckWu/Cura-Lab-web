@@ -1,6 +1,6 @@
 // src/views/Signup.tsx
 import { useState } from 'react'
-import { ArrowLeft, Loader2, Mail, Lock, User as UserIcon, Palette, Building } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, Palette, Building } from 'lucide-react'
 
 const PAYLOAD_URL = import.meta.env.VITE_PAYLOAD_URL
 
@@ -9,6 +9,23 @@ type SignupProps = {
   onSignupSuccess: () => void
   onSwitchToLogin: () => void
 }
+
+const ROLES = [
+  {
+    id: 'artist' as const,
+    icon: Palette,
+    title: "I'm an Artist",
+    desc: 'Submit your work to exhibitions, manage your portfolio, and track every application.',
+    points: ['Portfolio management', 'Submit to exhibitions', 'Track applications'],
+  },
+  {
+    id: 'gallery' as const,
+    icon: Building,
+    title: "I'm a Gallery",
+    desc: 'Create exhibitions, manage submissions, and curate shows with focused tools.',
+    points: ['Create exhibitions', 'Manage submissions', 'Jury review tools'],
+  },
+]
 
 export default function Signup({ onBack, onSignupSuccess, onSwitchToLogin }: SignupProps) {
   const [step, setStep] = useState<'role' | 'details'>('role')
@@ -55,7 +72,7 @@ export default function Signup({ onBack, onSignupSuccess, onSwitchToLogin }: Sig
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          appRole: selectedRole, // 使用选择的角色
+          appRole: selectedRole,
         }),
       })
 
@@ -65,7 +82,6 @@ export default function Signup({ onBack, onSignupSuccess, onSwitchToLogin }: Sig
         throw new Error(data.message || 'Signup failed')
       }
 
-      // 注册成功后自动登录
       const loginResponse = await fetch(`${PAYLOAD_URL}/api/users/login`, {
         method: 'POST',
         headers: {
@@ -92,257 +108,151 @@ export default function Signup({ onBack, onSignupSuccess, onSwitchToLogin }: Sig
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        {/* Back Button */}
+    <div className="min-h-screen bg-paper flex">
+      {/* Left — brand panel */}
+      <div className="hidden lg:flex w-[42%] bg-ink text-paper flex-col justify-between p-12 xl:p-16">
         <button
           onClick={step === 'details' ? () => setStep('role') : onBack}
-          className="group inline-flex items-center gap-2 text-gray-600 hover:text-neutral-900 font-medium mb-8 transition-colors"
+          className="group inline-flex items-center gap-2 text-[13px] tracking-[0.12em] uppercase text-paper/50 hover:text-paper font-medium transition-colors self-start"
         >
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          <span>{step === 'details' ? 'Back to role selection' : 'Back to Home'}</span>
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span>{step === 'details' ? 'Roles' : 'Home'}</span>
         </button>
+        <div>
+          <p className="font-display text-xl tracking-[0.18em] uppercase text-paper/40 mb-8">Cura Lab</p>
+          <p className="display text-paper text-4xl xl:text-5xl leading-[1.15]">
+            Begin your next<br /><span className="italic">exhibition.</span>
+          </p>
+        </div>
+        <p className="text-sm text-paper/40 font-light">Join galleries and artists working with intention.</p>
+      </div>
 
-        {/* Step 1: Role Selection */}
-        {step === 'role' && (
-          <div>
-            <div className="text-center mb-12">
-              <h1 className="text-4xl font-bold text-neutral-900 mb-4">
-                Join CURA LAB
-              </h1>
-              <p className="text-lg text-gray-600">
-                Choose your role to get started
-              </p>
-            </div>
+      {/* Right — content */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
+        <div className="w-full max-w-xl">
+          <button
+            onClick={step === 'details' ? () => setStep('role') : onBack}
+            className="lg:hidden group inline-flex items-center gap-2 text-[13px] tracking-[0.12em] uppercase text-stone hover:text-ink font-medium mb-10 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span>{step === 'details' ? 'Roles' : 'Home'}</span>
+          </button>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Artist Card */}
-              <button
-                onClick={() => handleRoleSelect('artist')}
-                className="group bg-white rounded-2xl border-2 border-neutral-200 hover:border-blue-500 p-8 text-left transition-all hover:shadow-xl"
-              >
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center mb-6">
-                  <Palette className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-neutral-900 mb-3">
-                  I'm an Artist
-                </h3>
-                <p className="text-gray-600 leading-relaxed mb-4">
-                  Submit your work to exhibitions, manage your portfolio, and track your submissions.
-                </p>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    <span>Portfolio management</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    <span>Submit to exhibitions</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                    <span>Track applications</span>
-                  </li>
-                </ul>
-              </button>
+          {step === 'role' && (
+            <div>
+              <p className="eyebrow mb-4">Sign Up</p>
+              <h1 className="display text-4xl sm:text-5xl mb-3">Join Cura Lab</h1>
+              <p className="text-stone font-light mb-12">Choose your role to get started.</p>
 
-              {/* Gallery Card */}
-              <button
-                onClick={() => handleRoleSelect('gallery')}
-                className="group bg-white rounded-2xl border-2 border-neutral-200 hover:border-purple-500 p-8 text-left transition-all hover:shadow-xl"
-              >
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center mb-6">
-                  <Building className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-neutral-900 mb-3">
-                  I'm a Gallery
-                </h3>
-                <p className="text-gray-600 leading-relaxed mb-4">
-                  Create exhibitions, manage submissions, and curate shows with powerful tools.
-                </p>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                    <span>Create exhibitions</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                    <span>Manage submissions</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                    <span>Jury review tools</span>
-                  </li>
-                </ul>
-              </button>
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-fog border border-fog mb-10">
+                {ROLES.map(role => (
+                  <button
+                    key={role.id}
+                    onClick={() => handleRoleSelect(role.id)}
+                    className="group bg-paper hover:bg-white text-left p-8 transition-colors duration-300"
+                  >
+                    <role.icon className="w-6 h-6 text-stone group-hover:text-ink transition-colors mb-8" strokeWidth={1.5} />
+                    <h3 className="font-display text-2xl text-ink mb-3">{role.title}</h3>
+                    <p className="text-sm text-stone leading-relaxed mb-6">{role.desc}</p>
+                    <ul className="space-y-2 mb-8">
+                      {role.points.map(pt => (
+                        <li key={pt} className="flex items-center gap-2.5 text-[13px] text-stone">
+                          <span className="w-1 h-1 bg-stone rounded-full" />
+                          {pt}
+                        </li>
+                      ))}
+                    </ul>
+                    <span className="inline-flex items-center gap-2 text-[12px] tracking-[0.12em] uppercase font-medium text-ink">
+                      Continue
+                      <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                    </span>
+                  </button>
+                ))}
+              </div>
 
-            {/* Footer */}
-            <div className="mt-8 text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-stone text-center">
                 Already have an account?{' '}
                 <button
                   onClick={onSwitchToLogin}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-ink font-medium underline underline-offset-4 decoration-ink/30 hover:decoration-ink transition-all"
                 >
                   Sign in
                 </button>
               </p>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Step 2: Details Form */}
-        {step === 'details' && (
-          <div className="bg-white rounded-2xl border border-neutral-200 shadow-xl overflow-hidden">
-            {/* Header */}
-            <div className="p-8 pb-6 border-b border-neutral-100">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center text-white font-bold text-lg">
-                  CL
-                </div>
-                <div>
-                  <div className="text-sm text-gray-600">Signing up as</div>
-                  <div className="font-semibold text-neutral-900 capitalize">{selectedRole}</div>
-                </div>
-              </div>
-              <h1 className="text-3xl font-bold text-neutral-900 mb-2">
-                Create your account
-              </h1>
-              <p className="text-gray-600">
-                Just a few details to get started
+          {step === 'details' && (
+            <div className="max-w-md">
+              <p className="eyebrow mb-4">
+                Signing up as <span className="text-ink capitalize">{selectedRole}</span>
               </p>
-            </div>
+              <h1 className="display text-4xl sm:text-5xl mb-3">Create your account</h1>
+              <p className="text-stone font-light mb-12">Just a few details to get started.</p>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="p-8">
-              {error && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              )}
-
-              <div className="space-y-5">
-                {/* Name Input */}
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-neutral-900 mb-2">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      id="name"
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                      placeholder="Alex Porter"
-                      className="w-full pl-11 pr-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    />
+              <form onSubmit={handleSubmit}>
+                {error && (
+                  <div className="mb-8 px-5 py-4 border border-ink/20 bg-ink/[0.03]">
+                    <p className="text-sm text-ink">{error}</p>
                   </div>
+                )}
+
+                <div className="space-y-8">
+                  {[
+                    { id: 'name', label: 'Full Name', type: 'text', placeholder: 'Alex Porter', value: formData.name, set: (v: string) => setFormData({ ...formData, name: v }) },
+                    { id: 'email', label: 'Email', type: 'email', placeholder: 'your@email.com', value: formData.email, set: (v: string) => setFormData({ ...formData, email: v }) },
+                    { id: 'password', label: 'Password', type: 'password', placeholder: '••••••••', value: formData.password, set: (v: string) => setFormData({ ...formData, password: v }), hint: 'Must be at least 8 characters' },
+                    { id: 'confirmPassword', label: 'Confirm Password', type: 'password', placeholder: '••••••••', value: formData.confirmPassword, set: (v: string) => setFormData({ ...formData, confirmPassword: v }) },
+                  ].map(field => (
+                    <div key={field.id}>
+                      <label htmlFor={field.id} className="eyebrow block mb-3">
+                        {field.label}
+                      </label>
+                      <input
+                        id={field.id}
+                        type={field.type}
+                        value={field.value}
+                        onChange={(e) => field.set(e.target.value)}
+                        required
+                        placeholder={field.placeholder}
+                        minLength={field.id.includes('password') ? 8 : undefined}
+                        className="w-full bg-transparent py-3 border-b border-fog focus:border-ink outline-none transition-colors text-[16px] placeholder:text-stone/50"
+                      />
+                      {field.hint && <p className="mt-2 text-xs text-stone/70">{field.hint}</p>}
+                    </div>
+                  ))}
+
+                  <button type="submit" disabled={loading} className="btn-solid w-full disabled:opacity-50">
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Creating account
+                      </>
+                    ) : (
+                      'Create Account'
+                    )}
+                  </button>
                 </div>
+              </form>
 
-                {/* Email Input */}
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-neutral-900 mb-2">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      required
-                      placeholder="your@email.com"
-                      className="w-full pl-11 pr-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* Password Input */}
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-neutral-900 mb-2">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      id="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      required
-                      placeholder="••••••••"
-                      minLength={8}
-                      className="w-full pl-11 pr-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Must be at least 8 characters
-                  </p>
-                </div>
-
-                {/* Confirm Password Input */}
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-900 mb-2">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                      required
-                      placeholder="••••••••"
-                      className="w-full pl-11 pr-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full px-6 py-3 text-base font-semibold text-white bg-neutral-900 hover:bg-neutral-800 rounded-full transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 mt-2"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    'Create Account'
-                  )}
-                </button>
-              </div>
-
-              {/* Footer Links */}
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600">
+              <div className="mt-10 pt-8 border-t border-fog text-center">
+                <p className="text-sm text-stone">
                   Already have an account?{' '}
                   <button
                     type="button"
                     onClick={onSwitchToLogin}
-                    className="text-blue-600 hover:text-blue-700 font-medium"
+                    className="text-ink font-medium underline underline-offset-4 decoration-ink/30 hover:decoration-ink transition-all"
                   >
                     Sign in
                   </button>
                 </p>
+                <p className="mt-4 text-xs text-stone/60">
+                  By signing up, you agree to our Terms of Service and Privacy Policy.
+                </p>
               </div>
-            </form>
-          </div>
-        )}
-
-        {/* Terms */}
-        {step === 'details' && (
-          <p className="mt-6 text-center text-xs text-gray-500">
-            By signing up, you agree to our Terms of Service and Privacy Policy
-          </p>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

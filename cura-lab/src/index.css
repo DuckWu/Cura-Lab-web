@@ -1,42 +1,127 @@
-/* -------------------------------------------------------
-   Tailwind CSS Entry
-   This file is the global stylesheet for your React app.
-   ------------------------------------------------------- */
+/* ═══════════════════════════════════════════════════════════
+   CURA LAB — Design System
+   Gallery-minimal language: serif display, tracked uppercase labels,
+   restrained ink-on-paper palette, generous whitespace.
+   ═══════════════════════════════════════════════════════════ */
 
-/* 1️⃣ 导入 Tailwind 全部功能（v4 新写法） */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap');
 @import "tailwindcss";
 
-/* 2️⃣ 自定义全局样式（可选） */
-html, body {
-  @apply bg-neutral-50 text-neutral-900 antialiased;
+@theme {
+  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --color-paper: #fafaf8;
+  --color-ink: #131311;
+  --color-ink-soft: #3f3f3c;
+  --color-stone: #8a8a84;
+  --color-fog: #e8e8e2;
+  --color-accent: #9a3b1e; /* oxblood — used sparingly */
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* 3️⃣ 自定义字体（可选） */
+/* ── Base ─────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+html, body {
+  @apply bg-paper text-ink antialiased;
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: #131311;
+  color: #fafaf8;
+}
+
 @layer base {
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight text-neutral-900;
+    font-family: var(--font-display);
+    @apply font-light tracking-tight text-ink;
   }
   p {
-    @apply text-neutral-700 leading-relaxed;
+    @apply text-ink-soft leading-relaxed;
   }
 }
 
-/* 4️⃣ 自定义组件样式（可选） */
+/* ── Typography helpers ───────────────────────────────── */
 @layer components {
+  /* Small tracked uppercase label — the "eyebrow" */
+  .eyebrow {
+    @apply text-[12px] tracking-[0.18em] uppercase font-medium;
+    color: var(--color-stone);
+  }
+  .display {
+    font-family: var(--font-display);
+    @apply font-light leading-[1.05] text-ink;
+  }
+  /* Opt out of the global serif headings inside functional workspaces
+     (dashboards, forms) where the sans/compact look is intentional. */
+  .sans-headings :is(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-sans);
+  }
+}
+
+/* ── Buttons ──────────────────────────────────────────── */
+@layer components {
+  .btn-solid {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-4
+           text-[13px] tracking-[0.12em] uppercase font-medium
+           bg-ink text-paper transition-all duration-300
+           hover:bg-ink-soft active:scale-[0.98];
+  }
+  .btn-line {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-4
+           text-[13px] tracking-[0.12em] uppercase font-medium
+           border border-current transition-all duration-300
+           hover:bg-white/10 active:scale-[0.98];
+  }
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-lg bg-neutral-900 text-white
-           px-4 py-2 font-medium hover:bg-neutral-800 active:scale-[0.98]
+    @apply inline-flex items-center justify-center rounded-lg bg-ink text-paper
+           px-4 py-2 font-medium hover:bg-ink-soft active:scale-[0.98]
            transition-transform duration-150;
   }
-
   .card {
     @apply bg-white rounded-2xl shadow-sm border border-neutral-200 p-6;
   }
 }
 
-/* 5️⃣ 实用工具（可选） */
+/* ── Motion primitives (GSAP sets initial states inline) ─ */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+  /* Line-mask reveal: parent overflow hidden, child translates up */
+  .mask-line {
+    display: block;
+    overflow: hidden;
+  }
+  .mask-line > span {
+    display: block;
+    will-change: transform;
+  }
+  /* Film grain overlay for canvas hero */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  }
 }
+
+@keyframes scrollhint {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+
+/* Refined scrollbar */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #fafaf8; }
+::-webkit-scrollbar-thumb { background: #d6d6cf; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #b9b9b0; }

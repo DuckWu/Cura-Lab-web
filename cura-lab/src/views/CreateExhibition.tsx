@@ -214,7 +214,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
 
   if (fetchingGallery) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+      <div className="min-h-screen bg-paper sans-headings flex items-center justify-center">
         <Loader2 className="w-12 h-12 animate-spin text-neutral-900" />
       </div>
     )
@@ -222,7 +222,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
 
   if (!myGallery) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-paper sans-headings flex items-center justify-center p-4">
         <div className="max-w-md bg-white rounded-2xl shadow-xl p-8 text-center border border-neutral-200">
           <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">No Gallery Found</h2>
@@ -241,7 +241,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-paper sans-headings">
       {/* Header */}
       <div className="bg-white border-b border-neutral-200">
         <div className="max-w-5xl mx-auto px-6 lg:px-8 py-6">
@@ -298,7 +298,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                   </button>
                 </div>
               ) : (
-                <label className="block aspect-[16/9] bg-white border-2 border-dashed border-neutral-300 rounded-2xl hover:border-blue-500 transition-all cursor-pointer group">
+                <label className="block aspect-[16/9] bg-white border-2 border-dashed border-neutral-300 rounded-2xl hover:border-ink transition-all cursor-pointer group">
                   <input
                     type="file"
                     accept="image/*"
@@ -307,7 +307,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                     required={!isEditMode}
                   />
                   <div className="w-full h-full flex flex-col items-center justify-center p-6">
-                    <Upload className="w-12 h-12 text-neutral-400 mb-3 group-hover:text-blue-500 transition-colors" />
+                    <Upload className="w-12 h-12 text-neutral-400 mb-3 group-hover:text-ink transition-colors" />
                     <p className="text-sm font-medium text-neutral-900">Upload cover image</p>
                     <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
                   </div>
@@ -329,7 +329,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
                   placeholder="Summer Contemporary Art Show 2025"
-                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 transition-all"
                 />
               </div>
 
@@ -344,7 +344,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={4}
                   placeholder="Describe your exhibition..."
-                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none"
+                  className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 transition-all resize-none"
                 />
               </div>
 
@@ -360,7 +360,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                     value={formData.start_date}
                     onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                     required
-                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 transition-all"
                   />
                 </div>
 
@@ -374,7 +374,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                     value={formData.submission_deadline}
                     onChange={(e) => setFormData({ ...formData, submission_deadline: e.target.value })}
                     required
-                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 transition-all"
                   />
                 </div>
 
@@ -388,7 +388,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                     value={formData.end_date}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
                     required
-                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 transition-all"
                   />
                 </div>
               </div>
@@ -409,7 +409,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                       onChange={(e) => setFormData({ ...formData, submission_fee: e.target.value })}
                       required
                       placeholder="35.00"
-                      className="w-full pl-11 pr-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      className="w-full pl-11 pr-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 transition-all"
                     />
                   </div>
                 </div>
@@ -427,7 +427,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                       onChange={(e) => setFormData({ ...formData, max_selected: e.target.value })}
                       required
                       placeholder="60"
-                      className="w-full pl-11 pr-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      className="w-full pl-11 pr-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 transition-all"
                     />
                   </div>
                 </div>
@@ -443,7 +443,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                     value={formData.platformFeePercentage}
                     onChange={(e) => setFormData({ ...formData, platformFeePercentage: e.target.value })}
                     placeholder="10"
-                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 transition-all"
                   />
                 </div>
               </div>
@@ -458,7 +458,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                     id="exhibitionStatus"
                     value={formData.exhibitionStatus}
                     onChange={(e) => setFormData({ ...formData, exhibitionStatus: e.target.value })}
-                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 transition-all"
                   >
                     <option value="open">Open for Submissions</option>
                     <option value="jury_review">In Jury Review</option>
@@ -476,7 +476,7 @@ export default function CreateExhibition({ currentUser, exhibitionId, onBack, on
                     id="status"
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30 transition-all"
                   >
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>

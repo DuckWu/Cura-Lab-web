@@ -1,9 +1,9 @@
 // src/views/GalleryDashboard.tsx
 import { useState, useEffect } from 'react'
 import CreateGallery from './CreateGallery'
-import { PDFDownloadLink } from '@react-pdf/renderer'
-import ExhibitionTagsPDF, { type TagStyle, TAG_STYLE_LABELS } from './ExhibitionTagsPDF'
-import { Printer } from 'lucide-react'
+import { lazy, Suspense } from 'react'
+
+const TagPdfDownload = lazy(() => import('../components/TagPdfDownload'))
 import {
   Plus,
   Building,
@@ -72,9 +72,6 @@ export default function GalleryDashboard({
   const [showBatchAssignModal, setShowBatchAssignModal] = useState(false)
 
   const [viewingSubmission, setViewingSubmission] = useState<Submission | null>(null)
-
-  // 🎨 Tag 风格选择
-  const [tagStyle, setTagStyle] = useState<TagStyle>('classic')
 
   const submissionsForPDF = filterExhibitionId === 'all'
     ? []
@@ -178,7 +175,7 @@ export default function GalleryDashboard({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+      <div className="min-h-screen bg-paper sans-headings flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-neutral-900 animate-spin mx-auto mb-4" />
           <p className="text-lg text-gray-600">Loading dashboard...</p>
@@ -189,7 +186,7 @@ export default function GalleryDashboard({
 
   if (error) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-paper sans-headings flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-neutral-200">
           <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-600" />
@@ -219,10 +216,10 @@ export default function GalleryDashboard({
 
   if (!myGallery) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-paper sans-headings flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-neutral-200">
-          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Building className="w-8 h-8 text-blue-600" />
+          <div className="w-16 h-16 bg-fog rounded-full flex items-center justify-center mx-auto mb-4">
+            <Building className="w-8 h-8 text-ink" />
           </div>
           <h2 className="text-2xl font-bold text-neutral-900 mb-2">Create Your Gallery</h2>
           <p className="text-gray-600 mb-6">
@@ -240,7 +237,7 @@ export default function GalleryDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex">
+    <div className="min-h-screen bg-paper sans-headings flex">
       {/* 🚀 左侧固定侧边栏 */}
       <div className="hidden lg:flex w-64 bg-white border-r border-neutral-200 flex-col sticky top-0 h-screen z-20">
         <div className="p-8 font-black text-2xl tracking-tighter border-b">ADMIN PANEL</div>
@@ -337,7 +334,7 @@ export default function GalleryDashboard({
                   <select
                     value={filterExhibitionId}
                     onChange={(e) => setFilterExhibitionId(e.target.value)}
-                    className="bg-neutral-50 border-none text-sm font-bold rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-neutral-900"
+                    className="bg-neutral-50 border-none text-sm font-bold rounded-lg px-4 py-2 focus:ring-2 focus:ring-ink/30 outline-none cursor-pointer text-neutral-900"
                   >
                     <option value="all">All Exhibitions</option>
                     {exhibitions.map(ex => (
@@ -348,44 +345,16 @@ export default function GalleryDashboard({
 
                 {filterExhibitionId !== 'all' && (
                   <div className="flex gap-3 items-center">
-                    {/* 🎨 Tag Style Selector + PDF Download */}
-                    {submissionsForPDF.length > 0 && (() => {
-                      const pdfDocument = (
-                        <ExhibitionTagsPDF
+                    {/* 🎨 Tag Style Selector + PDF Download (lazy: heavy pdf lib) */}
+                    {submissionsForPDF.length > 0 && (
+                      <Suspense fallback={<span className="text-xs text-neutral-400 px-2">Loading print…</span>}>
+                        <TagPdfDownload
                           submissions={submissionsForPDF}
                           galleryName={myGallery?.name}
-                          tagStyle={tagStyle}
+                          exhibitionTitle={currentExhibitionTitle}
                         />
-                      ) as any
-
-                      return (
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={tagStyle}
-                            onChange={(e) => setTagStyle(e.target.value as TagStyle)}
-                            className="bg-neutral-50 border border-neutral-300 text-sm font-medium rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer text-neutral-700"
-                          >
-                            {(Object.keys(TAG_STYLE_LABELS) as TagStyle[]).map((key) => (
-                              <option key={key} value={key}>{TAG_STYLE_LABELS[key]}</option>
-                            ))}
-                          </select>
-
-                          <PDFDownloadLink
-                            document={pdfDocument}
-                            fileName={`${currentExhibitionTitle.replace(/\s+/g, '_')}_Tags_${tagStyle}.pdf`}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 text-neutral-700 text-sm font-bold rounded-lg hover:bg-neutral-50 transition-colors shadow-sm"
-                          >
-                            {/* @ts-ignore */}
-                            {({ loading: pdfLoading }) => (
-                              <>
-                                <Printer className="w-4 h-4" />
-                                {pdfLoading ? 'Generating...' : 'Print Tags'}
-                              </>
-                            )}
-                          </PDFDownloadLink>
-                        </div>
-                      )
-                    })()}
+                      </Suspense>
+                    )}
 
                     {/* Batch Gallery Decision */}
                     {filterExhibitionId !== 'all' && (
@@ -499,7 +468,7 @@ interface StatCardProps {
 
 function StatCard({ icon: Icon, label, value, color }: StatCardProps) {
   const colorClasses = {
-    primary: 'bg-blue-50 text-blue-600',
+    primary: 'bg-fog text-ink',
     success: 'bg-green-50 text-green-600',
     accent: 'bg-purple-50 text-purple-600',
   }
@@ -620,7 +589,7 @@ function ExhibitionCard({ exhibition, onEdit, onView, onManageJurors, onManageSu
           </button>
           <button
             onClick={() => onEdit && onEdit(exhibition.id)}
-            className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1"
+            className="px-4 py-2 text-sm font-semibold text-white bg-ink rounded-lg hover:bg-neutral-800 transition-colors flex items-center justify-center gap-1"
           >
             <Edit className="w-4 h-4" />
             <span>Edit</span>
@@ -939,7 +908,7 @@ function SubmissionDetailModal({ submission, onClose, galleryName, commissionRat
                     <select
                       value={saleStatus}
                       onChange={(e) => setSaleStatus(e.target.value as typeof saleStatus)}
-                      className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ink/30"
                     >
                       <option value="not_for_sale">Not for Sale</option>
                       <option value="for_sale">For Sale</option>
@@ -959,7 +928,7 @@ function SubmissionDetailModal({ submission, onClose, galleryName, commissionRat
                         step="0.01"
                         value={soldPrice}
                         onChange={(e) => setSoldPrice(e.target.value)}
-                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ink/30"
                       />
                     </div>
                   )}
@@ -974,7 +943,7 @@ function SubmissionDetailModal({ submission, onClose, galleryName, commissionRat
                             value={buyerName}
                             onChange={(e) => setBuyerName(e.target.value)}
                             placeholder="John Doe"
-                            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ink/30"
                           />
                         </div>
                         <div>
@@ -984,7 +953,7 @@ function SubmissionDetailModal({ submission, onClose, galleryName, commissionRat
                             value={buyerContact}
                             onChange={(e) => setBuyerContact(e.target.value)}
                             placeholder="email or phone"
-                            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ink/30"
                           />
                         </div>
                       </div>
@@ -998,7 +967,7 @@ function SubmissionDetailModal({ submission, onClose, galleryName, commissionRat
                         <select
                           value={paymentMethod}
                           onChange={(e) => setPaymentMethod(e.target.value)}
-                          className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ink/30"
                         >
                           <option value="">Select...</option>
                           <option value="cash">Cash</option>
@@ -1036,7 +1005,7 @@ function SubmissionDetailModal({ submission, onClose, galleryName, commissionRat
                         onChange={(e) => setSaleNotes(e.target.value)}
                         rows={2}
                         placeholder="Additional notes..."
-                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ink/30 resize-none"
                       />
                     </div>
                   )}
@@ -1055,7 +1024,7 @@ function SubmissionDetailModal({ submission, onClose, galleryName, commissionRat
                     {(saleStatus === 'sold' || (artwork?.sale_status === 'sold')) && (
                       <button
                         onClick={() => setShowInvoice(true)}
-                        className="px-4 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        className="px-4 py-2.5 bg-ink text-white text-sm font-bold rounded-lg hover:bg-neutral-800 transition-colors flex items-center gap-2"
                       >
                         <FileText className="w-4 h-4" />
                         Invoice
@@ -1275,7 +1244,7 @@ function SubmissionsTable({
                           />
                         )}
                       </div>
-                      <span className="text-sm font-medium text-blue-600 hover:text-blue-700 underline decoration-blue-200">{artwork?.title || 'Untitled'}</span>
+                      <span className="text-sm font-medium text-ink hover:text-ink underline decoration-ink/20">{artwork?.title || 'Untitled'}</span>
                     </button>
                   </td>
 
@@ -1505,23 +1474,23 @@ function ManageJurorsModal({ exhibition, currentUser, onClose, onSuccess }: Mana
             </div>
             <button
               onClick={() => setShowInviteForm(!showInviteForm)}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-ink text-white text-sm font-semibold rounded-lg hover:bg-neutral-800 transition-colors flex items-center gap-2"
             >
               <UserPlus className="w-4 h-4" /> Invite New Juror
             </button>
           </div>
         </div>
         {showInviteForm && (
-          <div className="p-6 bg-blue-50 border-b border-blue-100">
+          <div className="p-6 bg-fog border-b border-fog">
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-900 mb-2">Name *</label>
-                  <input type="text" value={inviteForm.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} required placeholder="John Doe" className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="text" value={inviteForm.name} onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })} required placeholder="John Doe" className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-900 mb-2">Email *</label>
-                  <input type="email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} required placeholder="juror@email.com" className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  <input type="email" value={inviteForm.email} onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })} required placeholder="juror@email.com" className="w-full px-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/30" />
                 </div>
               </div>
               <div className="flex gap-3">
@@ -1530,7 +1499,7 @@ function ManageJurorsModal({ exhibition, currentUser, onClose, onSuccess }: Mana
                   type="button"
                   onClick={handleInviteJuror}
                   disabled={inviting || !inviteForm.name || !inviteForm.email}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-ink text-white rounded-lg hover:bg-neutral-800 transition-colors text-sm font-semibold disabled:opacity-50 flex items-center gap-2"
                 >
                   {inviting ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : <><Send className="w-4 h-4" /> Send Invitation</>}
                 </button>
@@ -1550,20 +1519,20 @@ function ManageJurorsModal({ exhibition, currentUser, onClose, onSuccess }: Mana
           ) : (
             <div className="space-y-2">
               {allJurors.map((juror) => (
-                <button key={juror.id} onClick={() => handleToggleJuror(String(juror.id))} className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${selectedJurors.has(String(juror.id)) ? 'border-blue-500 bg-blue-50' : 'border-neutral-200 hover:border-neutral-300'}`}>
+                <button key={juror.id} onClick={() => handleToggleJuror(String(juror.id))} className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${selectedJurors.has(String(juror.id)) ? 'border-ink bg-fog' : 'border-neutral-200 hover:border-neutral-300'}`}>
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedJurors.has(String(juror.id)) ? 'bg-blue-600' : 'bg-neutral-200'}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedJurors.has(String(juror.id)) ? 'bg-ink' : 'bg-neutral-200'}`}>
                       <Users className={`w-5 h-5 ${selectedJurors.has(String(juror.id)) ? 'text-white' : 'text-neutral-500'}`} />
                     </div>
                     <div className="text-left">
                       <div className="font-semibold text-neutral-900">
                         {juror.name || 'Unnamed Juror'}
-                        {juror.id === currentUser?.id && <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">YOU</span>}
+                        {juror.id === currentUser?.id && <span className="ml-2 text-xs text-ink bg-fog px-1.5 py-0.5 rounded border border-fog">YOU</span>}
                       </div>
                       <div className="text-sm text-gray-600">{juror.email}</div>
                     </div>
                   </div>
-                  {selectedJurors.has(String(juror.id)) && <CheckCircle className="w-5 h-5 text-blue-600" />}
+                  {selectedJurors.has(String(juror.id)) && <CheckCircle className="w-5 h-5 text-ink" />}
                 </button>
               ))}
             </div>
@@ -1702,19 +1671,19 @@ function AssignJurorsModal({ submission, currentUser, onClose, onSuccess }: Assi
                   onClick={() => toggleJuror(String(user.id))}
                   className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
                     selectedJurors.has(String(user.id))
-                    ? 'border-blue-500 bg-blue-50'
+                    ? 'border-ink bg-fog'
                     : 'border-neutral-200 hover:border-neutral-300'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedJurors.has(String(user.id)) ? 'bg-blue-600' : 'bg-neutral-200'}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedJurors.has(String(user.id)) ? 'bg-ink' : 'bg-neutral-200'}`}>
                       <Users className={`w-5 h-5 ${selectedJurors.has(String(user.id)) ? 'text-white' : 'text-neutral-500'}`} />
                     </div>
                     <div className="text-left">
                       <div className="font-semibold text-neutral-900 flex items-center gap-2">
                         {user.name || 'Unnamed User'}
                         {user.id === currentUser?.id && (
-                          <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200 font-bold">YOU</span>
+                          <span className="text-[10px] bg-fog text-ink px-1.5 py-0.5 rounded border border-fog font-bold">YOU</span>
                         )}
                         {user.appRole === 'gallery' && user.id !== currentUser?.id && (
                           <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded border border-purple-200 font-bold">GALLERY</span>
@@ -1723,7 +1692,7 @@ function AssignJurorsModal({ submission, currentUser, onClose, onSuccess }: Assi
                       <div className="text-sm text-gray-600">{user.email}</div>
                     </div>
                   </div>
-                  {selectedJurors.has(String(user.id)) && <CheckCircle className="w-5 h-5 text-blue-600" />}
+                  {selectedJurors.has(String(user.id)) && <CheckCircle className="w-5 h-5 text-ink" />}
                 </button>
               ))}
             </div>
@@ -1856,13 +1825,13 @@ function BatchAssignModal({ exhibitionId, currentUser, onClose, onSuccess }: Bat
                   onClick={() => toggleJuror(String(juror.id))}
                   className={`w-full flex items-center justify-between p-3 rounded-lg border-2 transition-all ${
                     selectedJurors.has(String(juror.id))
-                    ? 'border-blue-500 bg-blue-50'
+                    ? 'border-ink bg-fog'
                     : 'border-neutral-100 hover:border-neutral-200'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                      selectedJurors.has(String(juror.id)) ? 'bg-blue-600 text-white' : 'bg-neutral-200 text-neutral-600'
+                      selectedJurors.has(String(juror.id)) ? 'bg-ink text-white' : 'bg-neutral-200 text-neutral-600'
                     }`}>
                       {juror.name?.[0] || 'U'}
                     </div>
@@ -1871,11 +1840,11 @@ function BatchAssignModal({ exhibitionId, currentUser, onClose, onSuccess }: Bat
                         {juror.id === currentUser?.id ? `${juror.name} (Me)` : juror.name}
                       </span>
                       {juror.id === currentUser?.id && (
-                        <span className="text-[10px] text-blue-600 font-bold bg-blue-100 px-1.5 py-0.5 rounded">GALLERY</span>
+                        <span className="text-[10px] text-ink font-bold bg-fog px-1.5 py-0.5 rounded">GALLERY</span>
                       )}
                     </div>
                   </div>
-                  {selectedJurors.has(String(juror.id)) && <CheckCircle className="w-5 h-5 text-blue-600" />}
+                  {selectedJurors.has(String(juror.id)) && <CheckCircle className="w-5 h-5 text-ink" />}
                 </button>
               ))}
             </div>

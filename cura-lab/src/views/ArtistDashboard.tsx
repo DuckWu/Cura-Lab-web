@@ -11,7 +11,8 @@ import {
   Image as ImageIcon,
   ExternalLink,
   XCircle,
-  DollarSign
+  DollarSign,
+  Briefcase
 } from 'lucide-react'
 import type { User, Submission, Artwork, Exhibition, Media } from '../../../payload-project/src/payload-types'
 
@@ -37,6 +38,7 @@ type ArtistDashboardProps = {
   onViewArtwork?: (id: number) => void
   onBrowseExhibitions?: () => void
   onCreateArtwork?: () => void
+  onEnterJuryMode?: () => void
 }
 
 export default function ArtistDashboard({
@@ -44,13 +46,17 @@ export default function ArtistDashboard({
   onViewExhibition,
   onViewArtwork,
   onBrowseExhibitions,
-  onCreateArtwork
+  onCreateArtwork,
+  onEnterJuryMode
 }: ArtistDashboardProps) {
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'submissions' | 'artworks'>('submissions')
+  // > 0 when this artist is assigned as a juror on at least one exhibition
+  // (an artist can serve as a juror — the jurors list, not appRole, decides).
+  const [juryAssignments, setJuryAssignments] = useState(0)
 
   const [stats, setStats] = useState({
     totalSubmissions: 0,
@@ -115,9 +121,24 @@ export default function ArtistDashboard({
 
   useEffect(() => { fetchData() }, [currentUser])
 
+  // Jury assignments are list-based: show the jury entry only when this
+  // artist is actually on some exhibition's jurors list.
+  useEffect(() => {
+    if (!currentUser) return
+    fetch(
+      `${PAYLOAD_URL}/api/exhibitions?depth=0&limit=1&where[jurors][contains]=${currentUser.id}`,
+      { credentials: 'include' }
+    )
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data && typeof data.totalDocs === 'number') setJuryAssignments(data.totalDocs)
+      })
+      .catch(() => {})
+  }, [currentUser])
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50 flex items-center justify-center">
+      <div className="min-h-screen bg-paper sans-headings flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-neutral-900 animate-spin mx-auto mb-4" />
           <p className="text-lg text-neutral-600">Loading your dashboard...</p>
@@ -128,7 +149,7 @@ export default function ArtistDashboard({
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-paper sans-headings flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-600" />
@@ -144,7 +165,7 @@ export default function ArtistDashboard({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50">
+    <div className="min-h-screen bg-paper sans-headings">
       {/* Header */}
       <div className="bg-white border-b border-neutral-200">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 py-12">
@@ -161,7 +182,7 @@ export default function ArtistDashboard({
             <div className="flex items-center gap-3 flex-wrap">
               <button
                 onClick={onCreateArtwork}
-                className="inline-flex items-center gap-2 px-6 py-3 text-base font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-full transition-all shadow-lg"
+                className="inline-flex items-center gap-2 px-6 py-3 text-base font-semibold text-white bg-ink hover:bg-neutral-800 rounded-full transition-all shadow-lg"
               >
                 <Plus className="w-5 h-5" />
                 New Artwork
@@ -173,6 +194,15 @@ export default function ArtistDashboard({
                 <ExternalLink className="w-5 h-5" />
                 Browse Exhibitions
               </button>
+              {juryAssignments > 0 && (
+                <button
+                  onClick={onEnterJuryMode}
+                  className="inline-flex items-center gap-2 px-6 py-3 text-base font-semibold text-white bg-ink hover:bg-neutral-800 rounded-full transition-all shadow-lg"
+                >
+                  <Briefcase className="w-5 h-5" />
+                  Enter Jury Mode
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -230,7 +260,7 @@ export default function ArtistDashboard({
 
 function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: number; color: 'blue' | 'green' | 'orange' | 'purple' }) {
   const colors = {
-    blue: 'bg-blue-100 text-blue-600',
+    blue: 'bg-fog text-ink',
     green: 'bg-green-100 text-green-600',
     orange: 'bg-orange-100 text-orange-600',
     purple: 'bg-purple-100 text-purple-600',
@@ -311,7 +341,7 @@ function SubmissionCard({ submission, index, onViewExhibition }: {
 
   const getPaymentBadge = () => {
     if (submission.paymentStatus === 'paid') return { label: 'Paid', color: 'text-green-600 bg-green-50' }
-    if (submission.paymentStatus === 'waived') return { label: 'Waived', color: 'text-blue-600 bg-blue-50' }
+    if (submission.paymentStatus === 'waived') return { label: 'Waived', color: 'text-ink bg-fog' }
     return { label: 'Unpaid', color: 'text-neutral-500 bg-neutral-100' }
   }
 
@@ -362,7 +392,7 @@ function SubmissionCard({ submission, index, onViewExhibition }: {
       {/* Card Body */}
       <div className="p-4">
         {/* Artwork Title */}
-        <h3 className="font-bold text-neutral-900 text-sm mb-1 line-clamp-1 group-hover:text-blue-600 transition-colors">
+        <h3 className="font-bold text-neutral-900 text-sm mb-1 line-clamp-1 group-hover:text-ink transition-colors">
           {artwork?.title || 'Untitled'}
         </h3>
 
@@ -441,7 +471,7 @@ function ArtworksGrid({ artworks, onViewArtwork, onCreateArtwork }: {
             <div className="absolute top-2 right-2">
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm ${
                 artwork.sale_status === 'for_sale' ? 'bg-green-500 text-white' :
-                artwork.sale_status === 'sold' ? 'bg-blue-500 text-white' :
+                artwork.sale_status === 'sold' ? 'bg-ink text-white' :
                 artwork.sale_status === 'pending' ? 'bg-yellow-500 text-white' :
                 'bg-neutral-500/80 text-white'
               }`}>
@@ -450,7 +480,7 @@ function ArtworksGrid({ artworks, onViewArtwork, onCreateArtwork }: {
             </div>
           </div>
           <div className="p-3">
-            <h3 className="font-semibold text-neutral-900 text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">
+            <h3 className="font-semibold text-neutral-900 text-sm line-clamp-1 group-hover:text-ink transition-colors">
               {artwork.title}
             </h3>
             {artwork.price && (

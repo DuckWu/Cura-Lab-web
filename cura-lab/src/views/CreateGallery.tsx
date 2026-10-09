@@ -163,7 +163,7 @@ export default function CreateGallery({ currentUser, onBack, onSuccess }: Create
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50 p-6 flex justify-center">
+    <div className="min-h-screen bg-paper sans-headings p-6 flex justify-center">
       <div className="w-full max-w-3xl">
         <button
           onClick={onBack}
@@ -176,7 +176,7 @@ export default function CreateGallery({ currentUser, onBack, onSuccess }: Create
         <div className="bg-white rounded-2xl shadow-xl border border-neutral-200 overflow-hidden">
           <div className="p-8 border-b border-neutral-100 bg-neutral-50">
             <h1 className="text-3xl font-bold text-neutral-900 flex items-center gap-3">
-              <Building className="w-8 h-8 text-blue-600" />
+              <Building className="w-8 h-8 text-ink" />
               Create Your Gallery Profile
             </h1>
             <p className="text-gray-600 mt-2">
@@ -197,7 +197,7 @@ export default function CreateGallery({ currentUser, onBack, onSuccess }: Create
               <label className="block text-sm font-bold text-gray-900 mb-3">Gallery Logo</label>
               <div className="flex items-center gap-6">
                 <div className={`relative w-32 h-32 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden bg-gray-50 transition-colors ${
-                  logoPreview ? 'border-blue-500' : 'border-gray-300'
+                  logoPreview ? 'border-ink' : 'border-gray-300'
                 }`}>
                   {logoPreview ? (
                     <>
@@ -227,7 +227,7 @@ export default function CreateGallery({ currentUser, onBack, onSuccess }: Create
                   ) : (
                     <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors">
                       {compressing ? (
-                        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                        <Loader2 className="w-8 h-8 text-ink animate-spin" />
                       ) : (
                         <Upload className="w-8 h-8 text-gray-400" />
                       )}
@@ -263,7 +263,7 @@ export default function CreateGallery({ currentUser, onBack, onSuccess }: Create
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
                   placeholder="e.g. Modern Art Space"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ink/30 focus:border-transparent outline-none transition-all"
                 />
               </div>
 
@@ -277,7 +277,7 @@ export default function CreateGallery({ currentUser, onBack, onSuccess }: Create
                     value={formData.location}
                     onChange={e => setFormData({...formData, location: e.target.value})}
                     placeholder="City, Country"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ink/30 focus:border-transparent outline-none transition-all"
                   />
                 </div>
               </div>
@@ -289,7 +289,7 @@ export default function CreateGallery({ currentUser, onBack, onSuccess }: Create
                   value={formData.bio}
                   onChange={e => setFormData({...formData, bio: e.target.value})}
                   placeholder="Tell us about your gallery..."
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ink/30 focus:border-transparent outline-none transition-all resize-none"
                 />
               </div>
             </div>
@@ -305,7 +305,7 @@ export default function CreateGallery({ currentUser, onBack, onSuccess }: Create
                     value={formData.website}
                     onChange={e => setFormData({...formData, website: e.target.value})}
                     placeholder="https://..."
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ink/30 focus:border-transparent outline-none transition-all"
                   />
                 </div>
               </div>
@@ -319,7 +319,7 @@ export default function CreateGallery({ currentUser, onBack, onSuccess }: Create
                     value={formData.email}
                     onChange={e => setFormData({...formData, email: e.target.value})}
                     placeholder="contact@gallery.com"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ink/30 focus:border-transparent outline-none transition-all"
                   />
                 </div>
               </div>
@@ -333,7 +333,7 @@ export default function CreateGallery({ currentUser, onBack, onSuccess }: Create
                     value={formData.phone}
                     onChange={e => setFormData({...formData, phone: e.target.value})}
                     placeholder="+1 (555) 000-0000"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ink/30 focus:border-transparent outline-none transition-all"
                   />
                 </div>
               </div>
@@ -348,7 +348,7 @@ export default function CreateGallery({ currentUser, onBack, onSuccess }: Create
                     max="100"
                     value={formData.commissionRate}
                     onChange={e => setFormData({...formData, commissionRate: parseFloat(e.target.value)})}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                    className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-ink/30 focus:border-transparent outline-none transition-all"
                   />
                 </div>
               </div>

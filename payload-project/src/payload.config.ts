@@ -99,11 +99,19 @@ export default buildConfig({
             )
           }
 
-          const exhibition = await req.payload.findByID({
-            collection: 'exhibitions',
-            id: exhibitionId,
-            depth: 1,
-          })
+          let exhibition
+          try {
+            exhibition = await req.payload.findByID({
+              collection: 'exhibitions',
+              id: exhibitionId,
+              depth: 1,
+            })
+          } catch {
+            return Response.json(
+              { error: 'Exhibition not found' },
+              { status: 404 },
+            )
+          }
 
           const exhibitionGalleryId =
             typeof exhibition.gallery === 'object'
@@ -113,6 +121,32 @@ export default buildConfig({
           if (exhibitionGalleryId !== galleryId) {
             return Response.json(
               { error: 'You can only invite jurors to your own exhibitions' },
+              { status: 403 },
+            )
+          }
+
+          // Verify the requesting user actually owns this gallery
+          // (galleryId alone is caller-supplied and not trustworthy)
+          let gallery
+          try {
+            gallery = await req.payload.findByID({
+              collection: 'galleries',
+              id: galleryId,
+              depth: 0,
+            })
+          } catch {
+            return Response.json(
+              { error: 'Gallery not found' },
+              { status: 404 },
+            )
+          }
+          const galleryOwnerId =
+            typeof (gallery as any).owner === 'object'
+              ? (gallery as any).owner.id
+              : (gallery as any).owner
+          if (String(galleryOwnerId) !== String((req.user as any).id)) {
+            return Response.json(
+              { error: 'You can only invite jurors to your own gallery' },
               { status: 403 },
             )
           }

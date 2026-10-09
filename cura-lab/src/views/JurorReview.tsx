@@ -37,7 +37,7 @@ function isMedia(img: string | number | Media | null | undefined): img is Media 
   return typeof img === 'object' && img !== null && 'url' in img
 }
 
-export default function JurorReview({ currentUser, exhibitionId }: { currentUser: PayloadUser | null, exhibitionId?: number }) {
+export default function JurorReview({ currentUser, exhibitionId, onBack, onLogout }: { currentUser: PayloadUser | null, exhibitionId?: number, onBack?: () => void, onLogout?: () => void }) {
   const [submissions, setSubmissions] = useState<Submission[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -241,11 +241,11 @@ export default function JurorReview({ currentUser, exhibitionId }: { currentUser
 
   if (showSummary) {
     return (
-      <div className="min-h-screen bg-neutral-50 p-6 md:p-12">
+      <div className="min-h-screen bg-paper sans-headings p-6 md:p-12">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-end mb-8">
             <h1 className="text-3xl font-black text-neutral-900">Final Review</h1>
-            <button onClick={() => setShowSummary(false)} className="text-sm font-bold text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg">Continue Grading</button>
+            <button onClick={() => setShowSummary(false)} className="text-sm font-bold text-ink hover:bg-fog px-4 py-2 rounded-lg">Continue Grading</button>
           </div>
           <div className="bg-white rounded-3xl border border-neutral-200 overflow-hidden shadow-sm">
             <table className="w-full text-left">
@@ -271,7 +271,7 @@ export default function JurorReview({ currentUser, exhibitionId }: { currentUser
                       ) : <span className="text-neutral-300 text-xs italic">Pending</span>}
                     </td>
                     <td className="p-4 text-right">
-                      <button onClick={() => { setCurrentIndex(idx); setShowSummary(false); }} className="text-blue-600 font-bold text-sm hover:underline">Edit</button>
+                      <button onClick={() => { setCurrentIndex(idx); setShowSummary(false); }} className="text-ink font-bold text-sm hover:underline">Edit</button>
                     </td>
                   </tr>
                 ))}
@@ -293,7 +293,7 @@ export default function JurorReview({ currentUser, exhibitionId }: { currentUser
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <p className="text-gray-500">No submissions found in this category.</p>
-        <button onClick={() => setSelectedExhibitionFilter('all')} className="mt-4 text-blue-600 font-bold">View All</button>
+        <button onClick={() => setSelectedExhibitionFilter('all')} className="mt-4 text-ink font-bold">View All</button>
       </div>
     </div>
   )
@@ -301,7 +301,7 @@ export default function JurorReview({ currentUser, exhibitionId }: { currentUser
   const artwork = currentSubmission.artwork as Artwork
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex">
+    <div className="min-h-screen bg-paper sans-headings flex">
       {/* Sidebar */}
       <div className="hidden lg:flex w-64 bg-white border-r border-neutral-200 flex-col sticky top-0 h-screen z-20">
         <div className="p-8 font-black text-xl tracking-tighter border-b flex items-center gap-2">
@@ -360,9 +360,21 @@ export default function JurorReview({ currentUser, exhibitionId }: { currentUser
               </div>
             )}
 
-            <button onClick={() => setShowSummary(true)} className="ml-4 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full text-xs font-black hover:bg-blue-700 shadow-lg">
-              <ListFilter className="w-3 h-3" /> REVIEW
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowSummary(true)} className="flex items-center gap-2 px-4 py-2 bg-ink text-white rounded-full text-xs font-black hover:bg-neutral-800 shadow-lg">
+                <ListFilter className="w-3 h-3" /> REVIEW
+              </button>
+              {onBack && (
+                <button onClick={onBack} className="flex items-center gap-1.5 px-4 py-2 text-neutral-500 hover:text-neutral-900 rounded-full text-xs font-bold transition-colors">
+                  <ChevronLeft className="w-3.5 h-3.5" /> Dashboard
+                </button>
+              )}
+              {onLogout && (
+                <button onClick={onLogout} className="flex items-center gap-1.5 px-4 py-2 text-neutral-400 hover:text-neutral-900 rounded-full text-xs font-bold transition-colors">
+                  Logout
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

@@ -48,7 +48,14 @@ export const Submissions: CollectionConfig = {
         if (galleryOwnerID === user.id) return true
 
         const jurors = (exhibition.jurors as any)?.map((j: any) => j.id) || []
-        if (jurors.includes(user.id)) return true
+        if (jurors.includes(user.id)) {
+          // A juror cannot review their own submission. (An artist invited as
+          // a juror keeps their artist role now that the list — not appRole —
+          // is the authority, so this guard has to live here.)
+          const artistId =
+            typeof submission.artist === 'object' ? submission.artist.id : submission.artist
+          if (String(artistId) !== String(user.id)) return true
+        }
         
       } catch (e) {
         return false
@@ -75,7 +82,9 @@ export const Submissions: CollectionConfig = {
 
         if (galleryOwnerID === user.id) return true
         
-        if (user.appRole === APP_ROLES.juror && jurors.includes(user.id)) return true
+        // 评审权限按展览的 jurors 名单判定，不看 appRole：
+        // gallery 等角色也可以是 juror（与 read 权限的判定口径一致）。
+        if (jurors.includes(user.id)) return true
         
         if (user.appRole === APP_ROLES.artist && submission.artist.id === user.id && submission.juryStatus === 'pending') {
           return true
@@ -411,6 +420,12 @@ export const Submissions: CollectionConfig = {
           if (!val) return undefined
           if (typeof val === 'object' && val.id) return val.id
           return val
+        }
+        
+        // A submission always belongs to the requesting artist; ignore any
+        // caller-supplied artist id (prevents submitting as someone else).
+        if (operation === 'create' && user?.appRole === APP_ROLES.artist) {
+          data.artist = user.id
         }
         
         if (operation === 'update' && originalDoc) {

@@ -28,20 +28,10 @@ export async function inviteJuror(
     let jurorUser
 
     if (existingUsers.docs.length > 0) {
-      // 用户已存在
+      // 用户已存在：只取用户，不碰他的 appRole。
+      // 评审身份由展览的 jurors 名单决定，gallery 等角色也可以是 juror，
+      // 改写 appRole 会洗掉他原来的身份（比如 gallery 的 dashboard 和展览管理权限）。
       jurorUser = existingUsers.docs[0]
-      
-      // 如果不是 juror，更新为 juror
-      if (jurorUser.appRole !== 'juror') {
-        jurorUser = await payload.update({
-          collection: 'users',
-          id: jurorUser.id,
-          data: {
-            appRole: 'juror',
-          },
-          overrideAccess: true,
-        })
-      }
     } else {
       // 2. 创建新的 Juror 用户
       const tempPassword = generateRandomPassword()
@@ -55,6 +45,13 @@ export async function inviteJuror(
           appRole: APP_ROLES.juror,
         },
         overrideAccess: true,
+        // The Users beforeChange hook only honors an explicitly assigned role
+        // when this flag is present (see Users.ts). req.payload.create without
+        // an explicit req would otherwise run the hook with an empty context
+        // and the invite would silently degrade to a plain 'user'.
+        context: {
+          allowRoleAssignment: true,
+        },
       })
 
       // 3. 发送邀请邮件

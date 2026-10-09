@@ -38,7 +38,7 @@ export type View =
 export default function App() {
   const [view, setView] = useState<View>('landing')
   const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [_loadingUser, setLoadingUser] = useState(true)
+  const [, setLoadingUser] = useState(true)
   const [selectedGalleryId, setSelectedGalleryId] = useState<number | null>(null)
   const [selectedExhibitionId, setSelectedExhibitionId] = useState<number | null>(null)
   const [editingExhibitionId, setEditingExhibitionId] = useState<number | null>(null)
@@ -105,7 +105,7 @@ export default function App() {
   const hideNav = view === 'login' || view === 'signup' || view === 'jurorReview'
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900">
+    <div className="min-h-screen bg-paper text-ink">
       {!hideNav && (
         <Nav
           view={view}
@@ -121,6 +121,7 @@ export default function App() {
         <Landing
           onBrowse={() => setView('exhibitions')}
           onArtistPortal={handleDashboardClick}
+          onViewExhibition={(id) => { setSelectedExhibitionId(id); setView('exhibitionDetail') }}
         />
       )}
 
@@ -170,6 +171,7 @@ export default function App() {
           onViewArtwork={(id) => { setSelectedArtworkId(id); setView('artwork-detail') }}
           onBrowseExhibitions={() => setView('exhibitions')}
           onCreateArtwork={() => setView('createArtwork')}
+          onEnterJuryMode={() => setView('jurorReview')}
         />
       )}
       {view === 'createArtwork' && (
@@ -206,7 +208,17 @@ export default function App() {
       )}
 
       {view === 'jurorReview' && (
-        <JurorReview currentUser={currentUser} exhibitionId={selectedExhibitionId || undefined} />
+        <JurorReview
+          currentUser={currentUser}
+          exhibitionId={selectedExhibitionId || undefined}
+          onBack={() => {
+            // gallery staff return to their dashboard; jurors land back on home
+            if (currentUser?.appRole === 'gallery') setView('galleryDashboard')
+            else if (currentUser?.appRole === 'artist') setView('artistDashboard')
+            else setView('landing')
+          }}
+          onLogout={handleLogout}
+        />
       )}
     </div>
   )
@@ -233,8 +245,8 @@ function Nav({ view, setView, currentUser, onLogin, onLogout, onDashboard }: Nav
       onClick={() => { setView(v); setMobileOpen(false) }}
       className={`text-[13px] tracking-[0.08em] uppercase transition-colors ${
         view === v
-          ? 'text-neutral-900'
-          : 'text-neutral-400 hover:text-neutral-900'
+          ? 'text-ink'
+          : 'text-stone hover:text-ink'
       }`}
     >
       {label}
@@ -243,15 +255,14 @@ function Nav({ view, setView, currentUser, onLogin, onLogout, onDashboard }: Nav
 
   return (
     <header className={`sticky top-0 z-50 transition-colors ${
-      isLanding ? 'bg-white/80 backdrop-blur-xl' : 'bg-white border-b border-neutral-100'
+      isLanding ? 'bg-paper/80 backdrop-blur-xl' : 'bg-paper border-b border-fog'
     }`}>
       <div className="max-w-screen-2xl mx-auto px-6 lg:px-12">
         <div className="flex items-center justify-between h-16">
           {/* Wordmark */}
           <button
             onClick={() => setView('landing')}
-            className="text-xl tracking-[0.15em] font-light uppercase text-neutral-900 hover:opacity-60 transition-opacity"
-            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+            className="font-display text-xl tracking-[0.18em] font-light uppercase text-ink hover:opacity-60 transition-opacity"
           >
             Cura Lab
           </button>
@@ -265,14 +276,14 @@ function Nav({ view, setView, currentUser, onLogin, onLogout, onDashboard }: Nav
               <>
                 <button
                   onClick={onDashboard}
-                  className="text-[13px] tracking-[0.08em] uppercase text-neutral-400 hover:text-neutral-900 transition-colors"
+                  className="text-[13px] tracking-[0.08em] uppercase text-stone hover:text-ink transition-colors"
                 >
                   Dashboard
                 </button>
-                <div className="w-px h-4 bg-neutral-200" />
+                <div className="w-px h-4 bg-fog" />
                 <button
                   onClick={onLogout}
-                  className="text-[13px] tracking-[0.08em] uppercase text-neutral-400 hover:text-neutral-900 transition-colors flex items-center gap-1.5"
+                  className="text-[13px] tracking-[0.08em] uppercase text-stone hover:text-ink transition-colors flex items-center gap-1.5"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   Logout
@@ -280,10 +291,10 @@ function Nav({ view, setView, currentUser, onLogin, onLogout, onDashboard }: Nav
               </>
             ) : (
               <>
-                <div className="w-px h-4 bg-neutral-200" />
+                <div className="w-px h-4 bg-fog" />
                 <button
                   onClick={onLogin}
-                  className="text-[13px] tracking-[0.08em] uppercase text-neutral-900 hover:opacity-60 transition-opacity"
+                  className="text-[13px] tracking-[0.08em] uppercase text-ink hover:opacity-60 transition-opacity"
                 >
                   Sign In
                 </button>
@@ -292,27 +303,27 @@ function Nav({ view, setView, currentUser, onLogin, onLogout, onDashboard }: Nav
           </nav>
 
           {/* Mobile toggle */}
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-neutral-900">
+          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-ink">
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden pb-6 pt-2 border-t border-neutral-100 space-y-4">
+          <div className="md:hidden pb-6 pt-2 border-t border-fog space-y-4">
             {link('exhibitions', 'Exhibitions')}
             {link('gallery', 'Galleries')}
             {currentUser ? (
               <>
                 <button
                   onClick={() => { onDashboard(); setMobileOpen(false) }}
-                  className="block text-[13px] tracking-[0.08em] uppercase text-neutral-400 hover:text-neutral-900"
+                  className="block text-[13px] tracking-[0.08em] uppercase text-stone hover:text-ink"
                 >
                   Dashboard
                 </button>
                 <button
                   onClick={() => { onLogout(); setMobileOpen(false) }}
-                  className="block text-[13px] tracking-[0.08em] uppercase text-neutral-400 hover:text-neutral-900"
+                  className="block text-[13px] tracking-[0.08em] uppercase text-stone hover:text-ink"
                 >
                   Logout
                 </button>
